@@ -1,5 +1,4 @@
 # EFS functions
-import matplotlib.pyplot as plt
 import numpy as np
 from fsetools.lib.fse_bs_en_1991_1_2_parametric_fire import temperature as param_fire
 

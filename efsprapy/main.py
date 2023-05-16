@@ -1,5 +1,4 @@
 # Calculation of probability of exceeding limiting radiation level at a receiver
-# scipy.random.seed(1)
 from efsprapy.func.functions import *
 
 
