@@ -32,7 +32,6 @@ def main(
 
     view_factor = view_factor_parallel(panel_width, panel_height, boundary_distance)
 
-    # fire_temp = np.zeros((N, len(time)), dtype=float)
     heat_flux_s = np.zeros((N, len(time)), dtype=float)
     heat_flux_r = np.zeros((N, len(time)), dtype=float)
     ftp = np.zeros((N, len(time)), dtype=float)
