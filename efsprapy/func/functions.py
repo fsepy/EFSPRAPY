@@ -453,8 +453,9 @@ def time_eq(
 def heat_flux_source(
         temp: float,  # Temperature of radiating object [℃]
         emissivity: float):  # Emissivity of radiating object
+    ambient_temp = 293.15  # Ambient temperature [K]
     boltz = 5.67 * (10 ** -11)
-    heat_flux = boltz * emissivity * ((temp + 273.15) ** 4)
+    heat_flux = boltz * emissivity * (((temp + 273.15) ** 4) - (ambient_temp ** 4))
     return heat_flux
 
 
@@ -526,12 +527,12 @@ def flux_time_product(
         time_step,  # time to ignition of receive material [sec]
         n_factor: float,  # FTP index [n_factor = 1 (for thermally thin); n_factor = 2 (for thermally thick); n_factor = 1.5 (for intermediate)]
 ):
-    ftp = []
+    ftp = np.zeros_like(time)
     ftp[0] = 0
     ftp[1] = ((heat_flux_variable[1] - heat_flux_crit) ** n_factor) * time_step
     if heat_flux_variable[1] <= heat_flux_crit:
         ftp[1] = 0
-    for i in range(2, time_step, time[-1]):
+    for i in range(2, len(time)):
         ftp[i] = ((heat_flux_variable[i] - heat_flux_crit) ** n_factor) * time_step + ftp[i-1]
         if heat_flux_variable[i] <= heat_flux_crit:
             ftp[i] = 0

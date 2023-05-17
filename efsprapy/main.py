@@ -54,7 +54,7 @@ def main(
         for j in range(len(time)):
             heat_flux_s[i, j] = heat_flux_source(fire_temp[j], emissivity[i])  # Heat flux radiated from source [kW]
             heat_flux_r[i, j] = view_factor * heat_flux_s[i, j]  # Heat flux received at boundary due to radiation from source [kW]
-            ftp[i, j] = flux_time_product(heat_flux_s[i, j], heat_flux_critical, time, time_step, n_factor)  # Flux time product
+        ftp[i, :] = flux_time_product(heat_flux_s[i, :], heat_flux_critical, time, time_step, n_factor)  # Flux time product
 
     return ftp
 
