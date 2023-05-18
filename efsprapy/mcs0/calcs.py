@@ -25,6 +25,7 @@ def ftp_main(
         emitter_receiver_separation: float,
         chf: float,
         ftp_index: float,
+        ftp_target: float,
 ) -> tuple:
     """Calculates flux-time product based on PD 7974-1 Clause 8.2.2
 
@@ -35,7 +36,7 @@ def ftp_main(
     :param vent_area: [m], ventilation opening area
     :param room_floor_area: [m^2] room floor area
     :param room_total_surface_area: [m^2] room total internal surface area, including ventilation openings
-    :param fuel_density: [J/m^2] fue load density
+    :param fuel_density: [MJ/m^2] fue load density
     :param rho: [kg/m^3] lining density
     :param c: [??] lining specific heat capacity
     :param k: [??] lining thermal conductivity
@@ -46,6 +47,7 @@ def ftp_main(
     :param emitter_receiver_separation: [m], distance between emitter and receiver, used to calculate the view factor
     :param chf: [W], critical heat flux of the receiver surface
     :param ftp_index: [1], FTP index, 1 for thermally thin; 2 for thermally thick; 1.5 for intermediate
+    :param ftp_target: [1], FTP index, 1 for thermally thin; 2 for thermally thick; 1.5 for intermediate
     :return:
     """
     fuel_density *= 1e6
@@ -61,7 +63,7 @@ def ftp_main(
         A_v=vent_width * vent_height,
         h_eq=vent_height,
         q_fd=fuel_density,
-        lbd=k,
+        lambda_=k,
         rho=rho,
         c=c,
         t_lim=t_lim
@@ -84,4 +86,12 @@ def ftp_main(
     ftp_i = (((hf[:-1] + hf[1:]) * 0.5 - chf) ** ftp_index) * (t_arr[1:] - t_arr[:-1])
     ftp[1:] = np.cumsum(np.where(ftp_i < 0, 0., ftp_i))
 
-    return ftp[-1],
+    try:
+        if ftp_target <= np.amax(ftp):
+            t_ig = t_arr[np.argmin(np.abs(ftp - ftp_target))]
+        else:
+            t_ig = np.inf
+    except:
+        t_ig = np.nan
+
+    return t_ig, phi, ftp[-1]

@@ -16,6 +16,7 @@ EXAMPLE_INPUT_DETERMINISTIC = dict(
     emitter_receiver_separation=10,
     chf=12.6e3,
     ftp_index=1,
+    ftp_target=10000,
 )
 
 EXAMPLE_INPUT = dict(
@@ -38,6 +39,7 @@ EXAMPLE_INPUT = dict(
         emitter_receiver_separation=10,
         chf=12.6e3,
         ftp_index=1,
+        ftp_target=10000,
     )
 )
 

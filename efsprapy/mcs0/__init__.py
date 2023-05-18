@@ -16,7 +16,7 @@ from .inputs import EXAMPLE_INPUT_DETERMINISTIC, EXAMPLE_INPUT
 
 class MCS0Single(MCSSingle):
     OUTPUT_KEYS = (
-        'ftp',
+        't_ig', 'phi', 'ftp',
     )
 
     def __init__(self, name, n_simulations, sim_kwargs, save_dir):
