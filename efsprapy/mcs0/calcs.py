@@ -1,5 +1,5 @@
 __all__ = (
-    'ftp_main',
+    'main',
 )
 
 import numpy as np
@@ -7,7 +7,7 @@ from fsetools.lib.fse_bs_en_1991_1_2_parametric_fire import temperature as param
 from fsetools.lib.fse_thermal_radiation import phi_parallel_any_br187
 
 
-def ftp_main(
+def main(
         t_end: float,
         t_step: float,
         vent_width: float,
@@ -83,7 +83,7 @@ def ftp_main(
 
     # calculate flux-time product
     ftp = np.zeros_like(t_arr)
-    ftp_i = (((hf[:-1] + hf[1:]) * 0.5 - chf) ** ftp_index) * (t_arr[1:] - t_arr[:-1])
+    ftp_i = ((((hf[:-1] + hf[1:]) * 1e-3) * 0.5 - chf * 1e-3) ** ftp_index) * (t_arr[1:] - t_arr[:-1])
     ftp[1:] = np.cumsum(np.where(ftp_i < 0, 0., ftp_i))
 
     try:
@@ -95,3 +95,41 @@ def ftp_main(
         t_ig = np.nan
 
     return t_ig, phi, ftp[-1]
+
+
+def calc_receiver_temperature(
+        fire_type: int, t: np.ndarray, A_t: float, A_f: float, A_v: float, h_eq: float, q_fd: float, lbd: float,
+        rho: float, c: float, t_lim: float,
+        emitter_width: float,
+        emitter_height: float,
+        emitter_receiver_separation: float,
+        emissivity: float,
+) -> np.ndarray:
+    if fire_type == 0:
+        temperature = param_fire(
+            t=t, A_t=A_t, A_f=A_f, A_v=A_v, h_eq=h_eq, q_fd=q_fd, lbd=lbd, rho=rho, c=c, t_lim=t_lim
+        )
+
+        # calculate the view factor between the emitter and receiver
+        phi = phi_parallel_any_br187(
+            emitter_width,
+            emitter_height,
+            emitter_width / 2,
+            emitter_height / 2,
+            emitter_receiver_separation
+        )
+
+        # calculate imposed (radiation) heat flux at the receiver
+        hf = phi * 5.78e-8 * emissivity * (temperature ** 4 - 293.15 ** 4)
+
+    elif fire_type == 1:
+        # todo
+        # radiative_heat_flux_from_fire(
+        #     t=t,
+        #     fire_hrr_density_kWm2=0,
+        # )
+        temperature = None
+    else:
+        raise ValueError(f'Unknown `fire_type` {fire_type}')
+
+    return temperature
