@@ -1,7 +1,7 @@
 def test_mcs0_deterministic():
-    from efsprapy.mcs0.calcs import ftp_main
+    from efsprapy.mcs0.calcs import main
     from efsprapy.mcs0.inputs import EXAMPLE_INPUT_DETERMINISTIC
-    *_, ftp = ftp_main(**EXAMPLE_INPUT_DETERMINISTIC)
+    *_, ftp = main(**EXAMPLE_INPUT_DETERMINISTIC)
     assert abs(ftp - 63004611.94969697) <= 1e-5
 
 
