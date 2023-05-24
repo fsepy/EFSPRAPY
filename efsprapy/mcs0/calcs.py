@@ -63,7 +63,7 @@ def ftp_main(
         A_v=vent_width * vent_height,
         h_eq=vent_height,
         q_fd=fuel_density,
-        lambda_=k,
+        lbd=k,
         rho=rho,
         c=c,
         t_lim=t_lim
