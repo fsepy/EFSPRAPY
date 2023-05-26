@@ -63,7 +63,7 @@ def main(
         A_v=vent_width * vent_height,
         h_eq=vent_height,
         q_fd=fuel_density,
-        lbd=k,
+        lambda_=k,
         rho=rho,
         c=c,
         t_lim=t_lim
@@ -83,8 +83,10 @@ def main(
 
     # calculate flux-time product
     ftp = np.zeros_like(t_arr)
-    ftp_i = ((((hf[:-1] + hf[1:]) * 1e-3) * 0.5 - chf * 1e-3) ** ftp_index) * (t_arr[1:] - t_arr[:-1])
-    ftp[1:] = np.cumsum(np.where(ftp_i < 0, 0., ftp_i))
+    ftp_i_diff = (hf[:-1] + hf[1:]) * 0.5
+    ftp_i_diff[ftp_i_diff < chf] = chf
+    ftp_i = ((ftp_i_diff*1e-3 - chf * 1e-3) ** ftp_index) * (t_arr[1:] - t_arr[:-1])
+    ftp[1:] = np.cumsum(ftp_i)
 
     try:
         if ftp_target <= np.amax(ftp):
@@ -107,7 +109,7 @@ def calc_receiver_temperature(
 ) -> np.ndarray:
     if fire_type == 0:
         temperature = param_fire(
-            t=t, A_t=A_t, A_f=A_f, A_v=A_v, h_eq=h_eq, q_fd=q_fd, lbd=lbd, rho=rho, c=c, t_lim=t_lim
+            t=t, A_t=A_t, A_f=A_f, A_v=A_v, h_eq=h_eq, q_fd=q_fd, lambda_=lbd, rho=rho, c=c, t_lim=t_lim
         )
 
         # calculate the view factor between the emitter and receiver
