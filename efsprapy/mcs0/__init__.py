@@ -1,6 +1,6 @@
 __all__ = (
     'MCS0',
-    'ftp_main',
+    'main',
     'EXAMPLE_INPUT', 'EXAMPLE_INPUT_DETERMINISTIC'
 )
 
@@ -10,13 +10,13 @@ from typing import Callable
 import numpy as np
 from sfeprapy.mcs import MCSSingle, MCS
 
-from .calcs import ftp_main
+from .calcs import main
 from .inputs import EXAMPLE_INPUT_DETERMINISTIC, EXAMPLE_INPUT
 
 
 class MCS0Single(MCSSingle):
     OUTPUT_KEYS = (
-        't_ig', 'phi', 'ftp',
+        'phi_1', 'phi_2', 'ftp[-1]', 't_ig_ftp', 't_ig_safir', 't_max_safir', 'T_max_safir', 'fire_mode'
     )
 
     def __init__(self, name, n_simulations, sim_kwargs, save_dir):
@@ -24,7 +24,7 @@ class MCS0Single(MCSSingle):
 
     @property
     def worker(self) -> Callable:
-        return ftp_main
+        return main
 
     def get_pdf(self, bin_width: float = 0.2) -> (np.ndarray, np.ndarray, np.ndarray):
         ftp: np.ndarray = None
