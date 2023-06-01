@@ -6,7 +6,7 @@ import time
 from os import path, environ, getcwd, devnull
 from subprocess import Popen, PIPE
 from time import time
-from typing import List, Dict, Callable, Union
+from typing import List, Dict, Callable, Union, Optional
 
 import numpy as np
 
@@ -27,7 +27,7 @@ class PPXML:
     SAFIR Therm2D Post Processor (XML)
     """
 
-    def __init__(self):
+    def __init__(self, xml: Optional[str] = None):
         self.__data: Union[None, dict] = None  # dict parsed from xml
         self.__ns: Union[None, np.ndarray] = None  # node indexes where temperatures are measured `ns=[n1, n2, ...]`
         self.__xs: Union[None, np.ndarray] = None  # x coordinates [x1, x2, ...]
@@ -39,6 +39,8 @@ class PPXML:
         self.__xml_changed = True  # whether `self.__xml` has changed
         self.__ns_xys_changed = True  # whether `self.__ns` or `self.__xys` haved changed
         self.__func_xy_T: dict = dict()  # time: interp2d temperature at a given x, y
+
+        self.xml = xml
 
     def get_nodes_temp(self, nodes: np.ndarray) -> np.ndarray:
         self.process_xml()
