@@ -17,3 +17,4 @@ simple_test_in = path.join(dir_this, 'therm2d_simple', 'input.in')
 simple_test_flux_txt = path.join(dir_this, 'therm2d_simple', 'flux.txt')
 
 therm1d_hf_50 = path.join(dir_this, 'therm1d', 'hf_50.in')
+therm1d_hf_ft_20 = path.join(dir_this, 'therm1d', 'hf_ft_20.in')

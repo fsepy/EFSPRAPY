@@ -11,7 +11,7 @@ from fsetools.lib.fse_bs_en_1991_1_2_parametric_fire import temperature as param
 from fsetools.lib.fse_thermal_radiation import phi_parallel_any_br187
 
 from efsprapy.func.controlled_fire import heat_flux_from_controlled_fire
-from efsprapy.safir.test_files import therm1d_hf_50
+from efsprapy.safir.test_files import therm1d_hf_ft_20
 from efsprapy.safir.therm2d import Run, PPXML
 
 
@@ -229,7 +229,7 @@ class IgnitionTimeSolverIncidentHeatFluxSafir:
             dir_work: Optional[str] = None,
     ):
         if safir_input is None:
-            with open(therm1d_hf_50, 'r') as f:
+            with open(therm1d_hf_ft_20, 'r') as f:
                 self.safir_in_0_s = f.read()
         else:
             self.safir_in_0_s = safir_input
@@ -254,70 +254,60 @@ class IgnitionTimeSolverIncidentHeatFluxSafir:
             solver_iter_cap: int = 20,
             solver_t_ig_tol: float = 30,
     ):
+        __ = dict(
+            safir_in_0_s=self.safir_in_0_s, t=self.t, T_ig=T_ig, q_1=self.q_1, phi_1=self.phi_1,
+            epsilon_1=self.epsilon_1, q_2=self.q_2, phi_2=self.phi_2, epsilon_2=self.epsilon_2,
+            solver_t_ig_tol=solver_t_ig_tol,
+        )
         if self.__dir_work is not None:
-            return self.__solve(T_ig=T_ig, solver_iter_cap=solver_iter_cap, solver_t_ig_tol=solver_t_ig_tol)
+            return self.__solve(dir_work=self.__dir_work, **__)
         else:
             with tempfile.TemporaryDirectory() as dir_work:
-                print(dir_work)
-                self.__dir_work = dir_work
-                return self.__solve(T_ig=T_ig, solver_iter_cap=solver_iter_cap, solver_t_ig_tol=solver_t_ig_tol)
+                return self.__solve(dir_work=dir_work, **__)
 
+    @staticmethod
     def __solve(
-            self,
+            dir_work: str,
+            safir_in_0_s: str,
+            t: np.ndarray,
+            q_1: np.ndarray,
+            epsilon_1: float,
+            phi_1: float,
             T_ig: float,
-            solver_iter_cap: int = 20,
+            q_2: Optional[np.ndarray] = None,
+            epsilon_2: Optional[np.ndarray] = None,
+            phi_2: Optional[np.ndarray] = None,
             solver_t_ig_tol: float = 30,
     ):
         t_step = solver_t_ig_tol
-        t_end = np.amax(self.t[self.q_1 > np.amin(self.q_1)])
+        t_end = np.amax(t[q_1 > np.amin(q_1)])
 
         # initial heat flux
-        hf = self.phi_1 * (self.q_1 - self.epsilon_1 * 5.67e-8 * np.full_like(self.t, 293.15) ** 4)
-        if self.q_2 is not None:
-            hf += self.phi_2 * (self.q_2 - self.epsilon_2 * 5.67e-8 * np.full_like(self.t, 293.15) ** 4)
+        hf = phi_1 * (q_1 - epsilon_1 * 5.67e-8 * np.full_like(t, 293.15) ** 4)
+        if q_2 is not None:
+            hf += phi_2 * (q_2 - epsilon_2 * 5.67e-8 * np.full_like(t, 293.15) ** 4)
         hf[hf < 0] = 0
 
-        t_ig_arr = list()
         n_iter = 1
-        t_ig = -1
-        non_ignition_streak: int = 0
-        while n_iter < solver_iter_cap:
-            print(f'Iteration {n_iter}', end=': ')
-            T_1 = self.__safir_receiver_temperature(n_iter=0, t=self.t, t_end=t_end, t_step=t_step, hf=hf)
-            if T_1 is not None:
-                t_ig = self.__get_ignition_time(self.t, T_1, T_ig)
-            else:
-                print('Fail')
-                return np.nan, n_iter
 
-            if t_ig == np.inf:
-                if n_iter == 1:
-                    return t_ig, n_iter
-                if non_ignition_streak >= 1:
-                    return np.inf, n_iter
-                non_ignition_streak += 1
-                print('N/A')
-            else:
-                t_ig_arr.append(t_ig)
-                non_ignition_streak = 0
-                print(t_ig)
-
-            # check if convergence is sought
-            if len(t_ig_arr) >= 2 and abs(t_ig_arr[-1] - t_ig_arr[-2]) <= solver_t_ig_tol:
-                t_ig = t_ig_arr[-1]
-                break
-
-            hf = self.phi_1 * (self.q_1 - self.epsilon_1 * 5.67e-8 * T_1 ** 4)
-            if self.q_2 is not None:
-                hf += self.phi_2 * (self.q_2 - self.epsilon_2 * 5.67e-8 * T_1 ** 4)
-            hf[hf < 0] = 0
-
-            n_iter += 1
+        T_1 = IgnitionTimeSolverIncidentHeatFluxSafir.__solve_surface_temperature(
+            dir_work=dir_work, safir_in_0_s=safir_in_0_s, n_iter=0, t=t, t_end=t_end, t_step=t_step, hf=hf
+        )
+        if T_1 is not None:
+            try:
+                t_ig = np.amin(t[T_1 >= T_ig])
+            except ValueError:
+                t_ig = np.inf
+        else:
+            print('Fail')
+            return np.nan, n_iter
 
         return t_ig, n_iter
 
-    def __safir_receiver_temperature(
-            self,
+    @staticmethod
+    def __solve_surface_temperature(
+            dir_work: str,
+            safir_in_0_s: str,
             n_iter: int,
             t: np.ndarray,
             hf: np.ndarray,
@@ -327,14 +317,14 @@ class IgnitionTimeSolverIncidentHeatFluxSafir:
         """"""
 
         fn_bc = f'{n_iter}_hf'
-        with open(os.path.join(self.__dir_work, fn_bc), 'w+') as f:
+        with open(os.path.join(dir_work, fn_bc), 'w+') as f:
             f.write('\n'.join(f'{t[i]:g}, {hf[i]:.3f}' for i in range(len(t))))
 
         fn = f'i{n_iter}'
         fn_safir_in = f'{fn}.in'
-        fp_safir_in = os.path.join(self.__dir_work, fn_safir_in)
+        fp_safir_in = os.path.join(dir_work, fn_safir_in)
         with open(fp_safir_in, 'w+') as f:
-            f.write(self.safir_in_0_s.format(
+            f.write(safir_in_0_s.format(
                 fn_bc=fn_bc,
                 materials=f'WOODEC5\n    450. 0 25 9 0.8 1.2 0.0 0.0 1.0',
                 t_step=t_step,
@@ -344,17 +334,9 @@ class IgnitionTimeSolverIncidentHeatFluxSafir:
         Run().run(fp_safir_in)
 
         try:
-            with open(os.path.join(self.__dir_work, f'{fn}.XML')) as f:
+            with open(os.path.join(dir_work, f'{fn}.XML')) as f:
                 pp = PPXML(xml=f.read())
 
-            return np.interp(t, pp.t, pp.get_nodes_temp(nodes=np.array([1, ]))[0, :] + 273.15)
-
+            return np.interp(t, pp.t, pp.get_nodes_temp(np.array([401]))[0, :] + 273.15)
         except:
             return None
-
-    @staticmethod
-    def __get_ignition_time(t, T, T_ig):
-        try:
-            return np.amin(t[T >= T_ig])
-        except ValueError:
-            return np.inf

@@ -38,9 +38,9 @@ def test_parametric_fire():
     _q_ = 5.67e-8 * 1.0 * _T_ ** 4
 
     run = IgnitionTimeSolverIncidentHeatFluxSafir(t=_t_, q_1=_q_, phi_1=0.1, epsilon_1=1.0)
-    t_ig, n_iter = run.solve(solver_t_ig_tol=10, T_ig=273.15 + 300)
+    t_ig, n_iter = run.solve(solver_t_ig_tol=5, T_ig=273.15 + 150)
     print(t_ig, n_iter)
-    assert abs(t_ig - 760) < 10.
+    assert abs(t_ig - 980) < 5.
 
 
 def test_controlled_fire():
@@ -76,4 +76,4 @@ def test_controlled_fire():
 
 
 if __name__ == "__main__":
-    pass
+    test_parametric_fire()
