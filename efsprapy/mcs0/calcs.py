@@ -120,7 +120,7 @@ def main(
     else:
         raise ValueError('Unknown `fire_mode`')
 
-    t_ig_2, solver_iter = IgnitionTimeSolverIncidentHeatFluxSafir(
+    t_ig_safir, solver_iter, t_max_safir, T_max_safir = IgnitionTimeSolverIncidentHeatFluxSafir(
         t=t_arr,
         q_1=q_1,
         phi_1=phi_1,
@@ -132,7 +132,7 @@ def main(
     ).solve(T_ig=T_ig)
 
     # calculate flux-time product
-    t_ig_1, ftp = calculate_t_ig_ftp(
+    t_ig_ftp, ftp = calculate_t_ig_ftp(
         t=t_arr,
         q_1=q_1,
         phi_1=phi_1,
@@ -144,7 +144,7 @@ def main(
         phi_2=phi_2,
     )
 
-    return t_ig_1, t_ig_2, phi_1, phi_2, ftp[-1], solver_iter,
+    return phi_1, phi_2, ftp[-1], t_ig_ftp, t_ig_safir, t_max_safir, T_max_safir
 
 
 def calculate_t_ig_ftp(t, q_1, phi_1, emissivity, chf, ftp_index, ftp_target, q_2=None, phi_2=None):
@@ -293,6 +293,10 @@ class IgnitionTimeSolverIncidentHeatFluxSafir:
         T_1 = IgnitionTimeSolverIncidentHeatFluxSafir.__solve_surface_temperature(
             dir_work=dir_work, safir_in_0_s=safir_in_0_s, n_iter=0, t=t, t_end=t_end, t_step=t_step, hf=hf
         )
+
+        T_max = np.amax(T_1)
+        t_max = t[np.argmax(T_1)]
+
         if T_1 is not None:
             try:
                 t_ig = np.amin(t[T_1 >= T_ig])
@@ -302,7 +306,7 @@ class IgnitionTimeSolverIncidentHeatFluxSafir:
             print('Fail')
             return np.nan, n_iter
 
-        return t_ig, n_iter
+        return t_ig, n_iter, t_max, T_max
 
     @staticmethod
     def __solve_surface_temperature(
