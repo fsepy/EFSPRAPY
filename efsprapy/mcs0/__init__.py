@@ -16,7 +16,7 @@ from .inputs import EXAMPLE_INPUT_DETERMINISTIC, EXAMPLE_INPUT
 
 class MCS0Single(MCSSingle):
     OUTPUT_KEYS = (
-        'phi_1', 'phi_2', 'ftp', 't_ig_ftp', 't_ig_safir', 't_max_safir', 'T_max_safir'
+        'phi_1', 'phi_2', 'ftp[-1]', 't_ig_ftp', 't_ig_safir', 't_max_safir', 'T_max_safir', 'fire_mode'
     )
 
     def __init__(self, name, n_simulations, sim_kwargs, save_dir):
