@@ -1,7 +1,8 @@
 def test_mcs0_deterministic():
     from efsprapy.mcs0.calcs import main
     from efsprapy.mcs0.inputs import EXAMPLE_INPUT_DETERMINISTIC
-    phi_1, phi_2, ftp, t_ig_ftp, t_ig_safir, t_max_safir, T_max_safir, fire_mode = main(**EXAMPLE_INPUT_DETERMINISTIC)
+    phi_1, phi_2, ftp, t_ig_ftp, t_ig_safir, t_max_safir, T_max_safir, fire_mode, t_d = main(
+        **EXAMPLE_INPUT_DETERMINISTIC)
     print(phi_1, phi_2, ftp, t_ig_ftp, t_ig_safir, t_max_safir, T_max_safir, fire_mode)
     assert abs(phi_1 - 0.291670) <= 1e-2, f'{phi_1}!=0.291670'
     assert abs(phi_2 - 0.443859) <= 1e-2, f'{phi_2}!=0.443859'
@@ -54,7 +55,7 @@ def test_fire_mode_1():
     from efsprapy.mcs0.calcs import calculate_incident_heat_flux_from_controlled_fire
 
     _t_ = np.arange(0, 10800 + 0.5, 1)
-    q_f, phi_f, q_s, phi_s = calculate_incident_heat_flux_from_controlled_fire(
+    q_f, phi_f, q_s, phi_s, t_d = calculate_incident_heat_flux_from_controlled_fire(
         fire_mode=1,
         t_arr=_t_,
         hrr_density_kWm2=510,
