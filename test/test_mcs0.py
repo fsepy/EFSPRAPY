@@ -2,7 +2,8 @@ def test_mcs0_deterministic():
     from efsprapy.mcs0.calcs import main
     from efsprapy.mcs0.inputs import EXAMPLE_INPUT_DETERMINISTIC
     phi_1, phi_2, ftp, t_ig_ftp, t_ig_safir, t_max_safir, T_max_safir, fire_mode, t_d = main(
-        **EXAMPLE_INPUT_DETERMINISTIC)
+        **EXAMPLE_INPUT_DETERMINISTIC
+    )
     print(phi_1, phi_2, ftp, t_ig_ftp, t_ig_safir, t_max_safir, T_max_safir, fire_mode)
     assert abs(phi_1 - 0.291670) <= 1e-2, f'{phi_1}!=0.291670'
     assert abs(phi_2 - 0.443859) <= 1e-2, f'{phi_2}!=0.443859'
@@ -118,6 +119,59 @@ def test_fire_mode_2():
     assert abs(t_max - 510.) <= 1, f'{t_max}!=510.'
     assert abs(T_max - 998.43) <= 1, f'{T_max}!=998.43'
 
+
+def test_mcs0_research_v2():
+    EXAMPLE_INPUT = dict(
+        CASE_1=dict(
+            n_simulations=100,
+            t_end=180. * 60.,
+            t_step=5.,
+
+            opening_width=12,
+            opening_height=3,
+
+            room_height=3,
+            room_floor_area=96,
+            room_total_surface_area=312,
+
+            fire_mode=dict(dist='discrete_', values='0,1,2', weights='0.07,0.59,0.34'),
+            fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=10, ubound=1200, mean=420, sd=126),  # 420
+            fire_hrr_density_kWm2=250,
+            fire_growth_factor=0.0117,
+            fire_t_lim=20. * 60.,
+            fire_din_growth_factor=300,  # todo
+            fire_convection_factor=0.7,
+
+            detector_to_fire_vertical_distance=3,
+            detector_to_fire_horizontal_distance=5.6,  # todo, use sprinkler effectiveness?
+            detector_act_temp=93 + 273.15,
+            detector_response_time_index=135,
+            detector_conduction_factor=0.65,
+
+            lining_rho=2000,
+            lining_c=1000,
+            lining_k=1.13,
+            lining_thermal_effusivity=1500,
+
+            receiver_ignition_temperature=300 + 273.15,
+            receiver_emissivity=1,
+            receiver_separation=2,
+
+            ftp_chf=12.6e3,
+            ftp_index=dict(dist='uniform_', lbound=1, ubound=2),
+            ftp_target=34592,
+        )
+    )
+
+    from efsprapy.mcs0 import MCS0
+
+    mcs = MCS0()
+    mcs.set_inputs_dict(EXAMPLE_INPUT.copy())
+    mcs.run(n_proc=2, save=True, save_archive=False)
+
+
+if __name__ == '__main__':
+    test_mcs0_research_v2()
 
 if __name__ == "__main__":
     test_mcs0_deterministic()
