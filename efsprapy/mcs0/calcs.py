@@ -4,7 +4,6 @@ __all__ = (
 
 import os
 import tempfile
-from typing import Tuple
 
 import numpy as np
 from fsetools.lib.fse_activation_hd import heat_detector_temperature_pd7974
@@ -12,11 +11,11 @@ from fsetools.lib.fse_bs_en_1991_1_2_parametric_fire import temperature as para_
 from fsetools.lib.fse_din_en_1991_1_2_parametric_fire import temperature as din_param_temperature
 from fsetools.lib.fse_thermal_radiation import phi_parallel_any_br187
 
-from ..safir.test_files import therm1d_hf_ft_20
+from ..safir.test_files import therm1d_hf_ft_2
 from ..safir.therm2d import Run, PPXML
 
-with open(therm1d_hf_ft_20, 'r') as f:
-    therm1d_hf_ft_20_s = f.read()
+with open(therm1d_hf_ft_2, 'r') as f:
+    therm1d_s = f.read()
 
 
 def calculate_incident_heat_flux_from_controlled_fire(
@@ -292,7 +291,7 @@ def calculate_ignition_time_temperature(t: np.ndarray, q_inc: np.ndarray, T_ig: 
         fn_safir_in = f'{fn}.in'
         fp_safir_in = os.path.join(dir_work, fn_safir_in)
         with open(fp_safir_in, 'w+') as f_in:
-            f_in.write(therm1d_hf_ft_20_s.format(
+            f_in.write(therm1d_s.format(
                 fn_bc=fn_bc,
                 materials=f'WOODEC5\n    450. 0 25 9 0.8 1.2 0.0 0.0 1.0',
                 t_step=safir_time_step,
@@ -355,7 +354,7 @@ def main(
         ftp_chf: float,
         ftp_index: float,
         ftp_target: float,
-) -> Tuple[float, float, float, float, float, float, float, float, float, float]:
+):
     """Calculates flux-time product based on PD 7974-1 Clause 8.2.2
 
     :param t_end: [s], end time
@@ -437,16 +436,27 @@ def main(
     )
 
     # surface temperature
-    try:
-        q_2 = 0 if q_2 is np.nan else q_2
-        phi_2 = 0 if phi_2 is np.nan else phi_2
-        t_ig_safir, t_max_safir, T_max_safir = calculate_ignition_time_temperature(
-            t=t_arr, q_inc=q_1 * phi_1 + q_2 * phi_2, T_ig=receiver_ignition_temperature,
-        )
-    except ValueError:
+    if receiver_ignition_temperature > 0:
+        try:
+            q_2 = 0 if q_2 is np.nan else q_2
+            phi_2 = 0 if phi_2 is np.nan else phi_2
+            t_ig_safir, t_max_safir, T_max_safir = calculate_ignition_time_temperature(
+                t=t_arr, q_inc=q_1 * phi_1 + q_2 * phi_2, T_ig=receiver_ignition_temperature,
+            )
+        except ValueError:
+            t_ig_safir, t_max_safir, T_max_safir = np.nan, np.nan, np.nan
+    else:
         t_ig_safir, t_max_safir, T_max_safir = np.nan, np.nan, np.nan
 
     if isinstance(phi_1, np.ndarray):
         phi_1 = np.average(phi_1)
 
-    return phi_1, phi_2, ftp[-1], t_ig_ftp, t_ig_safir, t_max_safir, T_max_safir, fire_mode, t_d, np.amax(q_inc)
+    q_1 = np.average(q_1[q_inc > 0]) if isinstance(q_1, np.ndarray) else q_1
+    q_2 = np.average(q_2[q_inc > 0]) if isinstance(q_2, np.ndarray) else q_2
+    phi_1 = np.average(phi_1[q_inc > 0]) if isinstance(phi_1, np.ndarray) else phi_1
+    phi_2 = np.average(phi_2[q_inc > 0]) if isinstance(phi_2, np.ndarray) else phi_2
+    q_inc = np.average(q_inc[q_inc > 0]) if isinstance(q_inc, np.ndarray) else q_inc
+    return (
+        q_1, q_2, phi_1, phi_2, q_inc, t_d, t_ig_ftp, ftp[-1], t_ig_safir, t_max_safir, T_max_safir,
+        fire_mode, fire_fuel_density
+    )
