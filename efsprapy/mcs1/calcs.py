@@ -3,8 +3,9 @@ __all__ = (
 )
 
 import os
+import sys
 import tempfile
-from typing import Tuple
+import traceback
 
 import numpy as np
 from fsetools.lib.fse_activation_hd import heat_detector_temperature_pd7974
@@ -14,6 +15,7 @@ from fsetools.lib.fse_thermal_radiation import phi_parallel_any_br187
 
 from ..cfast.cfast import Run as RunCFAST
 from ..cfast.test_files import simple
+from ..project_info import logger
 from ..safir.test_files import therm1d_hf_ft_20
 from ..safir.therm2d import Run, PPXML
 
@@ -81,19 +83,23 @@ def calculate_incident_heat_flux_from_controlled_fire_cfast(
     fire_hrr_kW = fire_area * hrr_density_kWm2
 
     # the calculated fire hrr to be converted into following format:
-    # &TABL ID = 'Constant Fire' LABELS = 'TIME', 'HRR' , 'HEIGHT' , 'AREA' , 'CO_YIELD' , 'SOOT_YIELD' , 'HCN_YIELD' , 'HCL_YIELD' , 'TRACE_YIELD'  /
+    fire_hrr_curve_tabl = (
+        "&TABL ID = 'Constant Fire' "
+        "LABELS = 'TIME','HRR','HEIGHT','AREA','CO_YIELD','SOOT_YIELD','HCN_YIELD','HCL_YIELD','TRACE_YIELD' /\n"
+    )
     # &TABL ID = 'Constant Fire', DATA = 0,    0,   0, 0.01, 0, 0, 0, 0, 0 /
     # &TABL ID = 'Constant Fire', DATA = 10,   100, 0, 0.01, 0, 0, 0, 0, 0 /
     # &TABL ID = 'Constant Fire', DATA = 990,  100, 0, 0.01, 0, 0, 0, 0, 0 /
     # &TABL ID = 'Constant Fire', DATA = 1000, 0,   0, 0.01, 0, 0, 0, 0, 0 /
-    fire_hrr_curve_tabl = "&TABL ID = 'Constant Fire' LABELS = 'TIME', 'HRR' , 'HEIGHT' , 'AREA' , 'CO_YIELD' , 'SOOT_YIELD' , 'HCN_YIELD' , 'HCL_YIELD' , 'TRACE_YIELD'  /\n"
     fire_hrr_curve_tabl += "&TABL ID = 'Constant Fire', DATA = 0, 0, 0, 0, 0, 0.07, 0, 0, 0 /"
     fire_hrr_curve_tabl += '\n'.join(filter(
         None,
         [
-            f"&TABL ID = 'Constant Fire', DATA = {t_arr_[i]:.0f}, {fire_hrr_kW[i]:.1f}, 0, {fire_area[i]:.2f}, 0, 0.07, 0, 0, 0 /"
-            if fire_hrr_kW[i - 1] != fire_hrr_kW[i] else ''
-            for i in range(1, len(t_arr_))
+            f"&TABL "
+            f"ID = 'Constant Fire', "
+            f"DATA = {t_arr_[i]:.0f}, {fire_hrr_kW[i]:.1f}, 0, {fire_area[i]:.2f}, 0, 0.07, 0, 0, 0 /"
+            if fire_hrr_kW[i - 1] != fire_hrr_kW[i] != fire_hrr_kW[i + 1] else ''
+            for i in range(1, len(t_arr_) - 1)
         ]
     ))
 
@@ -130,58 +136,20 @@ def calculate_incident_heat_flux_from_controlled_fire_cfast(
                 fire_hrr_curve_tabl=fire_hrr_curve_tabl,
                 sprinkler_loc_x=sprinkler_loc_x,
                 sprinkler_loc_y=sprinkler_loc_y,
-                sprinkler_loc_z=H_d,
+                sprinkler_loc_z=H_d - 0.02,
                 sprinkler_activation_temperature=T_act - 273.15,
                 sprinkler_rti=RTI,
             ))
         _ = RunCFAST().run(fp_cfast_in)
-        t_, ult_, llt_, lh_, hrr_ = _.read_outputs()
 
-        ult_ = np.interp(t_arr, t_, ult_)
-        llt_ = np.interp(t_arr, t_, llt_)
-        lh_ = np.interp(t_arr, t_, lh_)
-        hrr_ = np.interp(t_arr, t_, hrr_)
+        t_, ult_, llt_, lh_, hrr_, spt_ = _.read_outputs()
 
-    # *_, T_jet, T_d = heat_detector_temperature_pd7974(
-    #     fire_time=t_arr,
-    #     fire_hrr_kW=fire_hrr_kW,
-    #     detector_to_fire_vertical_distance=H_d,
-    #     detector_to_fire_horizontal_distance=R_d,
-    #     detector_response_time_index=RTI,
-    #     detector_conduction_factor=C,
-    #     fire_hrr_density_kWm2=hrr_density_kWm2,
-    #     fire_conv_frac=C_conv,
-    #     activation_temperature=T_act,
-    # )
-    # if not (np.nanmin(T_d) < T_act < np.nanmax(T_d)):
-    #     # no detection, no treatment to HRR and smoke temperature
-    #     t_d = np.inf
-    #     T_jet[np.isnan(T_jet)] = 0.
-    # elif fire_mode == 1:
-    #     # fire capped at sprinkler activation
-    #     t_d = t_arr[len(T_d)]
-    #     T_jet = np.append(T_jet, np.full((len(t_arr) - len(T_jet),), T_jet[-1]))
-    #     fire_hrr_kW[len(T_d):] = fire_hrr_kW[len(T_d)]
-    # elif fire_mode == 2:
-    #     # fire decay at sprinkler activation
-    #     t_d = t_arr[len(T_d)]
-    #     res = dict(t_2_x=-1, t_3_x=-1, Q_2=-1, T_2_x=-1, T_3_x=-1, )
-    #     din_param_temperature(
-    #         t=t_arr, A_w=W_v * H_v, h_w=H_v, A_t=A_t, A_f=A_f, t_alpha=t_alpha, b=b, q_x_d=q_x_d, outputs=res
-    #     )
-    #     t_2_x, t_3_x, Q_2, T_2_x, T_3_x = res['t_2_x'], res['t_3_x'], res['Q_2'], res['T_2_x'], res['T_3_x']
-    #     fire_hrr_kW[len(T_d):] = fire_hrr_kW[len(T_d)] + (np.arange(len(t_arr) - len(T_d), dtype=float)) * (
-    #             0 - Q_2 * 1e3) / (t_3_x - t_2_x)
-    #     fire_hrr_kW[fire_hrr_kW < 0] = 0
-    #
-    #     T_jet = np.append(
-    #         T_jet,
-    #         T_jet[-1] + (np.arange(len(t_arr) - len(T_d), dtype=float)) * (T_3_x - T_2_x) / (t_3_x - t_2_x)
-    #     )
-    #     T_jet[T_jet < T_jet[0]] = T_jet[0]
-    # else:
-    #     raise ValueError(f'Unknown `fire_mode` {fire_mode}.')
-    #
+    ult_ = np.interp(t_arr, t_, ult_)
+    # llt_ = np.interp(t_arr, t_, llt_)
+    # lh_ = np.interp(t_arr, t_, lh_)
+    hrr_ = np.interp(t_arr, t_, hrr_)
+    t_d = np.interp(T_act - 273.15, spt_, t_)
+
     # ================================
     # Calculate radiation from hot gas
     # ================================
@@ -199,39 +167,36 @@ def calculate_incident_heat_flux_from_controlled_fire_cfast(
     q_f_1 = (1 - C_conv) * fire_hrr_kW / (4 * np.pi * np.power(S, 2))
 
     # flame type 2
-    # D_f = (4 * (fire_hrr_kW / hrr_density_kWm2) / np.pi) ** 0.5
-    # H_f = 0.235 * np.power(fire_hrr_kW, 2. / 5.) - 1.02 * D_f
-    # W_e = np.where(H_f <= H, D_f, np.maximum(2 * 0.95 * (H_f - H), D_f))
-    # W_e[W_e > W_v] = W_v
-    # H_e = np.where(H_f > H, H, H_f)
-    # q_f_2_mask = np.logical_and(W_e > 0, H_e > 0)
-    # q_f_2 = np.zeros_like(fire_hrr_kW)
-    # q_f_2[q_f_2_mask] = ((1 - C_conv) * fire_hrr_kW[q_f_2_mask] / 2.) / (W_e[q_f_2_mask] * H_e[q_f_2_mask])
-    #
-    # # combined flame type 1 and flame type 2
-    # q_f = np.zeros_like(fire_hrr_kW)
-    # q_f_mask = D_f > 0
-    # q_f[q_f_mask] = epsilon_f * np.where(S / D_f[q_f_mask] > 2.5, q_f_1[q_f_mask], q_f_2[q_f_mask])
-    # q_f *= epsilon_f * 1e3  # Radiation at receiver due to flame [kw/m²] and convert to W/m²
-    #
-    # # view factor
-    # phi_f_mask = np.logical_and(q_f_mask, q_f_2_mask)
-    #
-    # phi_f_2 = list()
-    # for i in np.arange(len(phi_f_mask))[phi_f_mask]:
-    #     phi_f_2.append(phi_parallel_any_br187(W_m=W_e[i], H_m=H_e[i], w_m=W_e[i] / 2, h_m=H_e[i] / 2, S_m=S, ))
-    # phi_f_2 = np.array(phi_f_2)
-    #
-    # phi_f = np.zeros_like(fire_hrr_kW)
-    # phi_f[phi_f_mask] = np.where(
-    #     (S / D_f[phi_f_mask]) > 2.5,
-    #     np.full_like(q_f_1[phi_f_mask], phi_parallel_any_br187(W_m=W_v, H_m=H_v, w_m=W_v / 2, h_m=H_v / 2, S_m=S, )),
-    #     phi_f_2
-    # )
-    q_f = q_f_1
-    phi_f = 1.
+    D_f = (4 * (fire_hrr_kW / hrr_density_kWm2) / np.pi) ** 0.5
+    H_f = 0.235 * np.power(fire_hrr_kW, 2. / 5.) - 1.02 * D_f
+    W_e = np.where(H_f <= H, D_f, np.maximum(2 * 0.95 * (H_f - H), D_f))
+    W_e[W_e > W_v] = W_v
+    H_e = np.where(H_f > H, H, H_f)
+    q_f_2_mask = np.logical_and(W_e > 0, H_e > 0)
+    q_f_2 = np.zeros_like(fire_hrr_kW)
+    q_f_2[q_f_2_mask] = ((1 - C_conv) * fire_hrr_kW[q_f_2_mask] / 4.) / (W_e[q_f_2_mask] * H_e[q_f_2_mask])
 
-    t_d = 0
+    # combined flame type 1 and flame type 2
+    q_f = np.zeros_like(fire_hrr_kW)
+    q_f_mask = D_f > 0
+    q_f[q_f_mask] = epsilon_f * np.where(S / D_f[q_f_mask] > 2.5, q_f_1[q_f_mask], q_f_2[q_f_mask])
+    q_f *= epsilon_f * 1e3  # Radiation at receiver due to flame [kw/m²] and convert to W/m²
+
+    # view factor
+    phi_f_mask = np.logical_and(q_f_mask, q_f_2_mask)
+
+    phi_f_2 = list()
+    for i in np.arange(len(phi_f_mask))[phi_f_mask]:
+        phi_f_2.append(phi_parallel_any_br187(W_m=W_e[i], H_m=H_e[i], w_m=W_e[i] / 2, h_m=H_e[i] / 2, S_m=S, ))
+    phi_f_2 = np.array(phi_f_2)
+
+    phi_f = np.zeros_like(fire_hrr_kW)
+    phi_f[phi_f_mask] = np.where(
+        (S / D_f[phi_f_mask]) > 2.5,
+        np.full_like(q_f_1[phi_f_mask], phi_parallel_any_br187(W_m=W_v, H_m=H_v, w_m=W_v / 2, h_m=H_v / 2, S_m=S, )),
+        phi_f_2
+    )
+
     return q_f, phi_f, q_s, phi_s, t_d  # fire hrr is in kW but need to be SI unit when returned
 
 
@@ -494,6 +459,8 @@ def calculate_ignition_time_temperature(t: np.ndarray, q_inc: np.ndarray, T_ig: 
     #
     # The receiver temperature will not exceed emitter temperature. Thus, if the calculated emitter temperature is not
     # greater than the ignition temperature, the function should return immediately, avoiding further heat transfer.
+    if T_ig < 0:
+        return np.nan, np.nan, np.nan
     if (np.amax(q_inc) / (5.67e-8 * 1.0) + 293.15 ** 4) ** 0.25 < T_ig:
         return np.nan, np.nan, np.nan
 
@@ -571,7 +538,7 @@ def main(
         ftp_chf: float,
         ftp_index: float,
         ftp_target: float,
-) -> Tuple[float, float, float, float, float, float, float, float, float, float]:
+):
     """Calculates flux-time product based on PD 7974-1 Clause 8.2.2
 
     :param t_end: [s], end time
@@ -607,37 +574,41 @@ def main(
     fire_fuel_density = fire_fuel_density_MJm2 * 1e6
     t_arr = np.arange(0, t_end + t_step / 2., t_step, dtype=float)
 
-    q_1, phi_1, q_2, phi_2, t_d = calculate_incident_heat_flux(
-        fire_mode=fire_mode,
+    try:
+        q_1, phi_1, q_2, phi_2, t_d = calculate_incident_heat_flux(
+            fire_mode=fire_mode,
 
-        t=t_arr,
-        D=room_depth,
-        W=room_width,
-        H=room_height,
-        A_v=opening_width * opening_height,
-        h_eq=opening_height,
-        q_fd=fire_fuel_density,
-        lbd=lining_k,
-        rho=lining_rho,
-        c=lining_c,
-        t_lim=fire_t_lim,
+            t=t_arr,
+            D=room_depth,
+            W=room_width,
+            H=room_height,
+            A_v=opening_width * opening_height,
+            h_eq=opening_height,
+            q_fd=fire_fuel_density,
+            lbd=lining_k,
+            rho=lining_rho,
+            c=lining_c,
+            t_lim=fire_t_lim,
 
-        W_e=opening_width,
-        H_e=opening_height,
-        S=receiver_separation,
+            W_e=opening_width,
+            H_e=opening_height,
+            S=receiver_separation,
 
-        hrr_density_kWm2=fire_hrr_density_kWm2,
-        alpha=fire_growth_factor,
-        H_d=detector_to_fire_vertical_distance,
-        R_d=detector_to_fire_horizontal_distance,
-        RTI=detector_response_time_index,
-        C=detector_conduction_factor,
-        T_act=detector_act_temp,
-        b=(lining_k * lining_rho * lining_c) ** 0.5,
-        C_conv=fire_convection_factor,
-        t_alpha=fire_din_growth_factor,
-    )
-    q_inc = q_1 * phi_1 + q_2 * phi_2
+            hrr_density_kWm2=fire_hrr_density_kWm2,
+            alpha=fire_growth_factor,
+            H_d=detector_to_fire_vertical_distance,
+            R_d=detector_to_fire_horizontal_distance,
+            RTI=detector_response_time_index,
+            C=detector_conduction_factor,
+            T_act=detector_act_temp,
+            b=(lining_k * lining_rho * lining_c) ** 0.5,
+            C_conv=fire_convection_factor,
+            t_alpha=fire_din_growth_factor,
+        )
+        q_inc = q_1 * phi_1 + q_2 * phi_2
+    except Exception as e:
+        logger.debug('{}\n{}\n{}'.format(*sys.exc_info()[:2], traceback.format_exc()))
+        return [np.nan] * 13
 
     # ==============================
     # Calculate ignition temperature
@@ -664,5 +635,12 @@ def main(
 
     if isinstance(phi_1, np.ndarray):
         phi_1 = np.average(phi_1)
-
-    return phi_1, phi_2, ftp[-1], t_ig_ftp, t_ig_safir, t_max_safir, T_max_safir, fire_mode, t_d, np.amax(q_inc)
+    q_1 = np.average(q_1[q_inc > 0]) if isinstance(q_1, np.ndarray) else q_1
+    q_2 = np.average(q_2[q_inc > 0]) if isinstance(q_2, np.ndarray) else q_2
+    phi_1 = np.average(phi_1[q_inc > 0]) if isinstance(phi_1, np.ndarray) else phi_1
+    phi_2 = np.average(phi_2[q_inc > 0]) if isinstance(phi_2, np.ndarray) else phi_2
+    q_inc = np.average(q_inc[q_inc > 0]) if isinstance(q_inc, np.ndarray) else q_inc
+    return (
+        q_1, q_2, phi_1, phi_2, q_inc, t_d, t_ig_ftp, ftp[-1], t_ig_safir, t_max_safir, T_max_safir,
+        fire_mode, fire_fuel_density
+    )
