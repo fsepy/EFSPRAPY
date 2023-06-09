@@ -12,8 +12,8 @@ from fsetools.lib.fse_bs_en_1991_1_2_parametric_fire import temperature as para_
 from fsetools.lib.fse_din_en_1991_1_2_parametric_fire import temperature as din_param_temperature
 from fsetools.lib.fse_thermal_radiation import phi_parallel_any_br187
 
-from efsprapy.safir.test_files import therm1d_hf_ft_20
-from efsprapy.safir.therm2d import Run, PPXML
+from ..safir.test_files import therm1d_hf_ft_20
+from ..safir.therm2d import Run, PPXML
 
 with open(therm1d_hf_ft_20, 'r') as f:
     therm1d_hf_ft_20_s = f.read()

@@ -170,12 +170,10 @@ def test_mcs0_research_v2():
     mcs.run(n_proc=2, save=True, save_archive=False)
 
 
-if __name__ == '__main__':
-    test_mcs0_research_v2()
-
 if __name__ == "__main__":
     test_mcs0_deterministic()
     test_mcs0()
     test_fire_mode_0()
     test_fire_mode_1()
     test_fire_mode_2()
+    test_mcs0_research_v2()
