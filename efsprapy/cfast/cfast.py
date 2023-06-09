@@ -24,7 +24,7 @@ def detect_binary(fp=None):
     else:
         raise NotImplementedError
 
-    env_home = environ.get("cfast")
+    env_home = environ.get("cfast7.7.3")
     env_path = shutil.which(executable)
 
     possible_paths = [
@@ -43,7 +43,7 @@ def detect_binary(fp=None):
 
 
 class Run:
-    FP_CFAST_EXE = detect_binary()
+    FP_CFAST_EXE = detect_binary(path.join(path.dirname(__file__), 'cfast7.7.3'))
 
     def __init__(self):
         self.__fp_in = None

@@ -48,14 +48,10 @@ def test_mcs0_deterministic():
         ftp_target=34592,
     )
     res_ = [510.4296006211892, 1.0, 1.1550856590671998, 0.3899564855008652, 0]
+    print(res, '\n', res_)
     assert len(res) == len(res_), 'mismatch length'
     for i in range(len(res)):
         assert abs(res[0] - res_[0]) <= 1e-2, f'{res[0]}!={res_[0]}'
-    # assert abs(phi_2 - 0.443859) <= 1e-2, f'{phi_2}!=0.443859'
-    # assert abs(ftp - 56531.682) <= 1e-2, f'{ftp}!=56531.682'
-    # assert abs(t_ig_ftp - 2235.) <= 1e-2, f'{t_ig_ftp}!=2250.'
-    # assert abs(t_ig_safir - 450.) <= 1e-2, f'{t_ig_safir}!=450.'
-    print(res)
 
 
 def test_mcs0():
@@ -106,7 +102,7 @@ def test_mcs0():
     pbar = tqdm(total=sum([v['n_simulations'] for k, v in input_kwargs.items()]))
     mcs = MCS1()
     mcs.set_inputs_dict(input_kwargs)
-    mcs.run(n_proc=61, set_progress=lambda x: pbar.update(1), save=True, save_archive=False)
+    mcs.run(n_proc=12, set_progress=lambda x: pbar.update(1), save=True, save_archive=False)
     pbar.close()
 
 
