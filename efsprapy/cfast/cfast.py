@@ -14,7 +14,7 @@ try:
 except ImportError:
     CREATE_NO_WINDOW = 0
 
-logger = logging.getLogger('gui')
+logger = logging.getLogger('efsprapy')
 
 
 def detect_binary(fp=None):
@@ -43,11 +43,11 @@ def detect_binary(fp=None):
 
 
 class Run:
-    FP_CFAST_EXE = detect_binary(path.join(path.dirname(__file__), 'cfast7.7.3'))
+    FP_BIN = detect_binary(path.join(path.dirname(__file__), 'cfast7.7.3'))
 
     def __init__(self):
         self.__fp_in = None
-        self.__fp_cfast_exe = Run.FP_CFAST_EXE if Run.FP_CFAST_EXE else detect_binary()
+        self.__fp_cfast_exe = Run.FP_BIN if Run.FP_BIN else detect_binary()
         self.__run_stdout = ''
 
     def get_stdout(self):
