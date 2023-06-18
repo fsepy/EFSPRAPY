@@ -276,8 +276,9 @@ def calculate_ignition_time_ftp(
     return t_ig, ftp
 
 
-def calculate_ignition_time_from_temperature(t_arr: np.ndarray, q_inc: np.ndarray, T_ig: float, safir_in_s: str,
-                                             t_step: float = 5., dir_temp: str = None):
+def calculate_ignition_time_from_temperature(
+        t_arr: np.ndarray, q_inc: np.ndarray, T_ig: float, safir_in_s: str, t_step: float = 5., dir_temp: str = None
+):
     # First to check , under ideal conditions, if the receiver temperature could reach ignition temperature,  which is
     # the highest possible temperature the receiver could attain through radiation following the Stefan-Boltzmann law:
     #
@@ -436,10 +437,6 @@ def main(
     else:
         logger.debug('{}\n{}\n{}'.format(*sys.exc_info()[:2], traceback.format_exc()))
         return [np.nan] * 9
-
-    # except Exception as e:
-    #     logger.debug('{}\n{}\n{}'.format(*sys.exc_info()[:2], traceback.format_exc()))
-    #     return [np.nan] * 9
 
     # ==============================
     # Calculate ignition temperature
