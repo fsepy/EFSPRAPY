@@ -3,7 +3,7 @@ __all__ = (
 
     'EXAMPLE_INPUT', 'EXAMPLE_INPUT_DETERMINISTIC',
 
-    'hf_ft_40mm_ft'
+    'hf_ft_40mm_ft', 'hf_ft_20mm_ft'
 )
 
 from os import path
@@ -14,7 +14,7 @@ from sfeprapy.mcs import MCSSingle, MCS
 
 from .calcs import main
 from .inputs import EXAMPLE_INPUT_DETERMINISTIC, EXAMPLE_INPUT
-from .safir_input_files import hf_ft_40mm_ft
+from .safir_input_files import hf_ft_40mm_ft, hf_ft_20mm_ft
 
 
 class MCS1Single(MCSSingle):
