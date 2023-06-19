@@ -1,10 +1,12 @@
 __all__ = (
-    'MCS1',
-    'main',
-    'EXAMPLE_INPUT', 'EXAMPLE_INPUT_DETERMINISTIC'
+    'MCS1', 'main',
+
+    'EXAMPLE_INPUT', 'EXAMPLE_INPUT_DETERMINISTIC',
+
+    'hf_ft_40mm_ft', 'hf_ft_20mm_ft'
 )
 
-import os
+from os import path
 from typing import Callable
 
 import numpy as np
@@ -12,6 +14,7 @@ from sfeprapy.mcs import MCSSingle, MCS
 
 from .calcs import main
 from .inputs import EXAMPLE_INPUT_DETERMINISTIC, EXAMPLE_INPUT
+from .safir_input_files import hf_ft_40mm_ft, hf_ft_20mm_ft
 
 
 class MCS1Single(MCSSingle):
@@ -53,7 +56,7 @@ class MCS1(MCS):
 
 
 def cli_main(fp_mcs_in: str, n_threads: int = 1):
-    fp_mcs_in = os.path.realpath(fp_mcs_in)
+    fp_mcs_in = path.realpath(fp_mcs_in)
 
     mcs = MCS1()
     mcs.set_inputs_file_path(fp_mcs_in)

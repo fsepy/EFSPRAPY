@@ -1,7 +1,8 @@
 import os
 import sys
-import tempfile
 import traceback
+from tempfile import TemporaryDirectory
+from typing import Optional
 
 import numpy as np
 from fsetools.lib.fse_bs_en_1991_1_2_parametric_fire import temperature as para_fire
@@ -10,10 +11,7 @@ from fsetools.lib.fse_thermal_radiation import phi_parallel_any_br187
 from ..cfast.cfast import Run as RunCFAST
 from ..cfast.test_files import simple
 from ..project_info import logger
-from ..safir.in_therm1d import hf_ft_20_fs
 from ..safir.therm2d import Run, PPXML
-
-safir_in_s = hf_ft_20_fs
 
 
 def calculate_hrr_and_smoke_with_sprinkler_suppression_cfast(
@@ -32,6 +30,8 @@ def calculate_hrr_and_smoke_with_sprinkler_suppression_cfast(
         R_d: float,
         RTI: float,
         T_act: float,
+
+        dir_temp: Optional[str] = None,
 ):
     """
 
@@ -122,7 +122,7 @@ def calculate_hrr_and_smoke_with_sprinkler_suppression_cfast(
     # ===================================================================================
     # calculate smoke layer temperature and actual fire hrr considering sprinkler effects
     # ===================================================================================
-    with tempfile.TemporaryDirectory() as dir_work:
+    with TemporaryDirectory(dir=dir_temp) as dir_work:
         fn = f'a'
         fn_cfast_in = f'{fn}.in'
         fp_cfast_in = os.path.join(dir_work, fn_cfast_in)
@@ -282,7 +282,9 @@ def calculate_ignition_time_ftp(
     return t_ig, ftp
 
 
-def calculate_ignition_time_temperature(t_arr: np.ndarray, q_inc: np.ndarray, T_ig: float, t_step: float = 5.):
+def calculate_ignition_time_from_temperature(
+        t_arr: np.ndarray, q_inc: np.ndarray, T_ig: float, safir_in_s: str, t_step: float = 5., dir_temp: str = None
+):
     # First to check , under ideal conditions, if the receiver temperature could reach ignition temperature,  which is
     # the highest possible temperature the receiver could attain through radiation following the Stefan-Boltzmann law:
     #
@@ -300,28 +302,24 @@ def calculate_ignition_time_temperature(t_arr: np.ndarray, q_inc: np.ndarray, T_
         return np.nan, np.nan, np.nan
 
     t_end = np.amax(t_arr[q_inc > np.amin(q_inc)])
+    fn_bc = f'b'
+    fn = f'i'
+    fn_safir_in = f'{fn}.in'
+    safir_in_formatted_s = safir_in_s.format(fn_bc=fn_bc, t_step=t_step, t_end=t_end, )
 
-    with tempfile.TemporaryDirectory() as dir_work:
-        fn_bc = f'b'
+    with TemporaryDirectory(dir=dir_temp) as dir_work:
         with open(os.path.join(dir_work, fn_bc), 'w+') as f_bc:
             f_bc.write('\n'.join(f'{t_arr[i]:g}, {q_inc[i]:.3f}' for i in range(len(t_arr))))
 
-        fn = f'a'
-        fn_safir_in = f'{fn}.in'
         fp_safir_in = os.path.join(dir_work, fn_safir_in)
         with open(fp_safir_in, 'w+') as f_in:
-            f_in.write(safir_in_s.format(
-                fn_bc=fn_bc,
-                materials=f'WOODEC5\n    450. 0 25 9 0.8 1.2 0.0 0.0 1.0',
-                t_step=t_step,
-                t_end=t_end,
-            ))
+            f_in.write(safir_in_formatted_s)
         Run().run(fp_safir_in)
 
         try:
             with open(os.path.join(dir_work, f'{fn}.XML')) as f_xml:
                 pp = PPXML(xml=f_xml.read())
-            T_1 = np.interp(t_arr, pp.t, pp.get_nodes_temp(np.array([401]))[0, :] + 273.15)
+            T_1 = np.interp(t_arr, pp.t, pp.get_nodes_temp(np.array([1]))[0, :] + 273.15)
         except ValueError:
             T_1 = None
 
@@ -362,16 +360,20 @@ def main(
         detector_act_temp: float,
         detector_response_time_index: float,
 
-        receiver_ignition_temperature: float,
         receiver_separation: float,
 
         lining_rho: float,
         lining_c: float,
         lining_k: float,
 
-        ftp_chf: float,
-        ftp_index: float,
-        ftp_target: float,
+        ftp_chf: Optional[float] = None,
+        ftp_index: Optional[float] = None,
+        ftp_target: Optional[float] = None,
+
+        receiver_ignition_temperature: Optional[float] = -1,
+        safir_input_file_s: Optional[str] = None,
+
+        dir_temp: Optional[str] = None,
 ):
     """Calculates flux-time product based on PD 7974-1 Clause 8.2.2
 
@@ -380,17 +382,12 @@ def main(
     :param opening_width: [m]
     :param opening_height: [m], ventilation opening height
     :param room_height: [m]
-    :param room_floor_area: [m^2] room floor area
-    :param room_total_surface_area: [m^2] room total internal surface area, including ventilation openings
     :param fire_mode: [1]
     :param fire_fuel_density_MJm2: [MJ/m^2]
-    :param fire_convection_factor: [1]
-    :param fire_din_growth_factor: [1]
     :param fire_growth_factor: [kW/s2]
     :param fire_hrr_density_kWm2:  [kW/m^2]
     :param fire_t_lim: [s]
     :param receiver_ignition_temperature:
-    :param detector_conduction_factor:
     :param detector_response_time_index:
     :param detector_to_fire_horizontal_distance:
     :param detector_act_temp:
@@ -398,14 +395,14 @@ def main(
     :param lining_rho: [kg/m^3] lining density
     :param lining_c: [J/K/kg] lining specific heat capacity
     :param lining_k: [W/m/K] lining thermal conductivity
-    :param receiver_emissivity: [1], emissivity of the emitter, e.g., from the opening
     :param receiver_separation: [m], distance between emitter and receiver, used to calculate the view factor
     :param ftp_chf: [W], critical heat flux of the receiver surface
     :param ftp_index: [1], FTP index, 1 for thermally thin; 2 for thermally thick; 1.5 for intermediate
     :param ftp_target: [1], FTP target for ignition
+    :param safir_input_file_s: [1], safir input file in string format
     :return:
     """
-    fire_fuel_density = fire_fuel_density_MJm2 * 1e6
+    fire_fuel_density = fire_fuel_density_MJm2 * 1e6 * fire_combustion_efficiency
     t_arr = np.arange(0, t_end + t_step / 2., t_step, dtype=float)
     room_depth = room_width / room_width_depth_ratio
 
@@ -430,7 +427,8 @@ def main(
             W=room_width, D=room_depth, H=room_height,
             q_fd=fire_fuel_density, hrr_density_kWm2=fire_hrr_density_kWm2, alpha_kWs2=fire_growth_factor,
             H_d=detector_to_fire_vertical_distance, R_d=detector_to_fire_horizontal_distance,
-            RTI=detector_response_time_index, T_act=detector_act_temp
+            RTI=detector_response_time_index, T_act=detector_act_temp,
+            dir_temp=dir_temp
         )
 
         q_f, phi_f, q_s, phi_s = calculate_incident_heat_flux_from_sprinkler_suppressed_fire(
@@ -445,10 +443,6 @@ def main(
     else:
         logger.debug('{}\n{}\n{}'.format(*sys.exc_info()[:2], traceback.format_exc()))
         return [np.nan] * 9
-
-    # except Exception as e:
-    #     logger.debug('{}\n{}\n{}'.format(*sys.exc_info()[:2], traceback.format_exc()))
-    #     return [np.nan] * 9
 
     # ==============================
     # Calculate ignition temperature
@@ -467,8 +461,9 @@ def main(
     try:
         if receiver_ignition_temperature <= 0:
             raise ValueError
-        t_ig_safir, t_max_safir, T_max_safir = calculate_ignition_time_temperature(
-            t_arr=t_arr, q_inc=q_inc, T_ig=receiver_ignition_temperature,
+        t_ig_safir, t_max_safir, T_max_safir = calculate_ignition_time_from_temperature(
+            t_arr=t_arr, q_inc=q_inc, T_ig=receiver_ignition_temperature, safir_in_s=safir_input_file_s,
+            dir_temp=dir_temp
         )
     except Exception:
         t_ig_safir, t_max_safir, T_max_safir = np.nan, np.nan, np.nan
