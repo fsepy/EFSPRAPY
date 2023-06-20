@@ -75,14 +75,14 @@ EXAMPLE_INPUT = dict(
         lining_c=1000,
         lining_k=1.13,
 
-        receiver_ignition_temperature=273.15 + 368,
+        receiver_ignition_temperature=-1,
         receiver_separation=7.320449646472931,
 
         ftp_chf=13.4e3,
         ftp_index=2.0,
         ftp_target=34592,
 
-        safir_input_file_s=hf_ft_40mm_ft,
+        safir_input_file_s=None,
     )
 )
 

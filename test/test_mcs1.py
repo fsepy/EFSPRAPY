@@ -1,3 +1,4 @@
+import numpy as np
 
 
 def test_mcs0_deterministic():
@@ -42,20 +43,48 @@ def test_mcs0_deterministic():
 
         safir_input_file_s=hf_ft_40mm_ft,
     )
-    res_ = [510.4296006211892, 1.0, 1.1550856590671998, 0.3899564855008652, 0]
+    res_ = (
+        4311.590135621454, np.inf, 158.4242793829904, np.inf, 2790.0, 590.5699999999999, 0, np.inf, 600000000.0, 0.5
+    )
     print(res, '\n', res_)
     assert len(res) == len(res_), 'mismatch length'
     for i in range(len(res)):
         assert abs(res[0] - res_[0]) <= 1e-2, f'{res[0]}!={res_[0]}'
 
 
-def test_mcs1():
+def test_mcs1_fire_mode():
     from efsprapy.mcs1 import EXAMPLE_INPUT
     from efsprapy.mcs1 import MCS1
     from tqdm import tqdm
 
     kwargs = EXAMPLE_INPUT.copy()
     kwargs['CASE_1']['n_simulations'] = 100
+    kwargs['CASE_1']['fire_mode'] = 0
+
+    import tempfile
+    from sfeprapy.func.xlsx import dict_to_xlsx
+    from sfeprapy.mcs import InputParser
+    from os import path
+    with tempfile.TemporaryDirectory() as dir_work:
+        print(dir_work)
+        fp_input = path.join(dir_work, 'test.xlsx')
+        dict_to_xlsx({k_: InputParser.flatten_dict(v_) for k_, v_ in kwargs.items()}, fp_input)
+
+        mcs = MCS1()
+        mcs.set_inputs_file_path(fp_input)
+        pbar = tqdm()
+        mcs.run(
+            10, lambda _: pbar.update(1),
+            lambda _: setattr(pbar, 'total', _),
+            save=True,
+            save_archive=False,
+            concurrency_strategy=2
+        )
+        pbar.close()
+
+    kwargs = EXAMPLE_INPUT.copy()
+    kwargs['CASE_1']['n_simulations'] = 100
+    kwargs['CASE_1']['fire_mode'] = 1
 
     mcs = MCS1()
     mcs.set_inputs_dict(kwargs)
@@ -69,8 +98,26 @@ def test_mcs1():
     )
     pbar.close()
 
+    kwargs = EXAMPLE_INPUT.copy()
+    kwargs['CASE_1']['n_simulations'] = 100
+    kwargs['CASE_1']['fire_mode'] = 2
+
+    mcs = MCS1()
+    mcs.set_inputs_dict(kwargs)
+    pbar = tqdm()
+    mcs.run(
+        10, lambda _: pbar.update(1),
+        lambda _: setattr(pbar, 'total', _),
+        save=True,
+        save_archive=False,
+        concurrency_strategy=2
+    )
+    pbar.close()
+
+    t_ig_ftp = mcs.mcs_cases['CASE_1'].output[:, 1]
+    print(sum(np.logical_and(t_ig_ftp > 0, t_ig_ftp < np.inf)))
+
 
 if __name__ == "__main__":
-    # test_calculate_incident_heat_flux_from_controlled_fire_cfast()
-    # test_mcs0_deterministic()
-    test_mcs1()
+    test_mcs0_deterministic()
+    test_mcs1_fire_mode()
