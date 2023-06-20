@@ -16,6 +16,7 @@ from ..safir.therm2d import Run, PPXML
 
 def calculate_hrr_and_smoke_with_sprinkler_suppression_cfast(
         t_arr: np.ndarray,
+        fire_mode: int,
 
         W: float,
         D: float,
@@ -100,6 +101,11 @@ def calculate_hrr_and_smoke_with_sprinkler_suppression_cfast(
     ))
 
     t_end = np.amax(t_arr_[fire_hrr_kW > np.amin(fire_hrr_kW)])
+
+    if fire_mode == 1:
+        t_end = min(7200., t_end)
+    if fire_mode == 2:
+        t_end = min(3600., t_end)
 
     # calculate sprinkler location
     if ((W ** 2 + D ** 2) ** 0.5 / 4.) < R_d:
@@ -417,7 +423,7 @@ def main(
         t_d = np.inf
     elif fire_mode == 1 or fire_mode == 2:
         hrr, T_smoke, t_d = calculate_hrr_and_smoke_with_sprinkler_suppression_cfast(
-            t_arr=t_arr,
+            t_arr=t_arr, fire_mode=fire_mode,
             W=room_width, D=room_depth, H=room_height,
             q_fd=fire_fuel_density, hrr_density_kWm2=fire_hrr_density_kWm2, alpha_kWs2=fire_growth_factor,
             H_d=detector_to_fire_vertical_distance, R_d=detector_to_fire_horizontal_distance,

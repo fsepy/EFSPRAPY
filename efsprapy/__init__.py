@@ -1,3 +1,21 @@
+from os import path
+
+# make root directory of this app which will be used 1. when running the app; 2. pyinstaller at compiling the app.
+if path.exists(path.dirname(__file__)):
+    # this path should be used when running the app as a Python package (non compiled) and/or pyinstaller at compiling
+    # stage.
+    __root_dir__ = path.realpath(path.dirname(__file__))
+elif path.exists(path.dirname(path.dirname(__file__))):
+    # the path will become invalid when the app run after compiled as the dirname `fsetoolsGUI` will disappear.
+    # instead, the parent folder of the project dir will be used.
+    __root_dir__ = path.realpath(path.dirname(path.dirname(__file__)))
+else:
+    raise IsADirectoryError(
+        f'Project root directory undefined: '
+        f'{path.dirname(__file__)} nor '
+        f'{path.dirname(path.dirname(__file__))}'
+    )
+
 """
 VERSION IDENTIFICATION RULES DOCUMENTED IN PEP 440 ARE FOLLOWED.
 

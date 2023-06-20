@@ -1,7 +1,7 @@
-import numpy as np
 
 
 def test_mcs0_deterministic():
+    import numpy as np
     from efsprapy.mcs1 import hf_ft_40mm_ft
     from efsprapy.mcs1.calcs import main
 
@@ -46,7 +46,7 @@ def test_mcs0_deterministic():
     res_ = (
         4311.590135621454, np.inf, 158.4242793829904, np.inf, 2790.0, 590.5699999999999, 0, np.inf, 600000000.0, 0.5
     )
-    print(res, '\n', res_)
+    print(f'{res}\n{res_}')
     assert len(res) == len(res_), 'mismatch length'
     for i in range(len(res)):
         assert abs(res[0] - res_[0]) <= 1e-2, f'{res[0]}!={res_[0]}'
