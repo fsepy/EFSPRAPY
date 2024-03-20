@@ -15,9 +15,9 @@ EXAMPLE_INPUT_DETERMINISTIC = dict(
 
     # fire_mode=dict(dist='discrete_', values='0,1,2', weights='0.07,0.59,0.34'),
     fire_mode=0,
-    fire_fuel_density_MJm2=dict(dist="br187_fuel_load_density_", lbound=10, ubound=5000),
+    fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=228.88, ubound=2775.2, mean=780, sd=234),
+    fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.32, ubound=0.57),
     fire_combustion_efficiency=1,
-    fire_hrr_density_kWm2=dict(dist='br187_hrr_density_'),
     fire_growth_factor=0.0117,
     fire_t_lim=20. * 60.,
     fire_convection_factor=0.7,
@@ -58,9 +58,9 @@ EXAMPLE_INPUT = dict(
 
         # fire_mode=dict(dist='discrete_', values='0,1,2', weights='0.07,0.59,0.34'),
         fire_mode=0,
-        fire_fuel_density_MJm2=dict(dist="br187_fuel_load_density_", lbound=10, ubound=5000),
+        fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=228.88, ubound=2775.2, mean=780, sd=234),
+        fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.32, ubound=0.57),
         fire_combustion_efficiency=1,
-        fire_hrr_density_kWm2=dict(dist='br187_hrr_density_'),
         fire_growth_factor=0.0117,
         fire_t_lim=20. * 60.,
         fire_convection_factor=0.7,

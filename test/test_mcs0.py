@@ -1,15 +1,17 @@
 def test_mcs0_deterministic():
     from efsprapy.mcs0.calcs import main
     from efsprapy.mcs0.inputs import EXAMPLE_INPUT_DETERMINISTIC
-    phi_1, phi_2, ftp, t_ig_ftp, t_ig_safir, t_max_safir, T_max_safir, fire_mode, t_d = main(
+    (
+        q_1, q_2, phi_1, phi_2, q_inc, t_d, t_ig_ftp, ftp, t_ig_safir, t_max_safir, T_max_safir, fire_mode,
+        fire_fuel_density
+    ) = main(
         **EXAMPLE_INPUT_DETERMINISTIC
     )
-    print(phi_1, phi_2, ftp, t_ig_ftp, t_ig_safir, t_max_safir, T_max_safir, fire_mode)
     assert abs(phi_1 - 0.291670) <= 1e-2, f'{phi_1}!=0.291670'
     assert abs(phi_2 - 0.443859) <= 1e-2, f'{phi_2}!=0.443859'
     assert abs(ftp - 56531.682) <= 1e-2, f'{ftp}!=56531.682'
-    assert abs(t_ig_ftp - 2235.) <= 1e-2, f'{t_ig_ftp}!=2250.'
-    assert abs(t_ig_safir - 450.) <= 1e-2, f'{t_ig_safir}!=450.'
+    assert abs(t_ig_ftp - 2235.) <= 1e-2, f'{t_ig_ftp}!=2235.'
+    assert abs(t_ig_safir - 450.) <= 1e-2, f'{t_ig_safir}!=440.'
 
 
 def test_mcs0():
