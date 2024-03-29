@@ -239,6 +239,7 @@ def calculate_incident_heat_flux_from_parametric_fire(
 
         W_o: float,
         H_o: float,
+        P_o: float,
         S: float,
 ):
     # calculate the view factors
@@ -246,7 +247,7 @@ def calculate_incident_heat_flux_from_parametric_fire(
         t=t_arr,
         A_t=2 * (W * D + D * H + H * W),
         A_f=W * D,
-        A_v=W_o * H_o,
+        A_v=W_o * H_o * P_o,
         h_eq=H_o,
         q_fd=q_fd,
         lbd=lbd,
@@ -416,7 +417,7 @@ def main(
             q_fd=fire_fuel_density,
             lbd=lining_k, rho=lining_rho, c=lining_c,
             t_lim=fire_t_lim,
-            W_o=opening_width, H_o=opening_height * opening_ventilation_fraction,
+            W_o=opening_width, H_o=opening_height, P_o=opening_ventilation_fraction,
             S=receiver_separation,
         )
         q_inc = q_f * phi_f
