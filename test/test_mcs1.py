@@ -1,5 +1,3 @@
-
-
 def test_mcs0_deterministic():
     import numpy as np
     from efsprapy.mcs1 import hf_ft_40mm_ft
@@ -56,6 +54,7 @@ def test_mcs1_fire_mode():
     from efsprapy.mcs1 import EXAMPLE_INPUT
     from efsprapy.mcs1 import MCS1
     from tqdm import tqdm
+    import numpy as np
 
     kwargs = EXAMPLE_INPUT.copy()
     kwargs['CASE_1']['n_simulations'] = 100
