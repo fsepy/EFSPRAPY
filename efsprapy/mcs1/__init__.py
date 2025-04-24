@@ -10,11 +10,11 @@ from os import path
 from typing import Callable
 
 import numpy as np
-from sfeprapy.mcs import MCSSingle, MCS
 
 from .calcs import main
 from .inputs import EXAMPLE_INPUT_DETERMINISTIC, EXAMPLE_INPUT
 from .safir_input_files import hf_ft_40mm_ft, hf_ft_20mm_ft
+from ..mcs.mcs import MCSSingle, MCS
 
 
 class MCS1Single(MCSSingle):

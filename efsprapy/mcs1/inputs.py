@@ -56,8 +56,8 @@ EXAMPLE_INPUT = dict(
         room_height=3,
         room_width_depth_ratio=dict(dist='uniform_', lbound=0.4, ubound=0.6),
 
-        # fire_mode=dict(dist='discrete_', values='0,1,2', weights='0.07,0.59,0.34'),
-        fire_mode=0,
+        fire_mode=dict(dist='discrete_', values='0,1,2', weights='0.07,0.59,0.34', lbound=None, ubound=None),
+        # fire_mode=0,
         fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=228.88, ubound=2775.2, mean=780, sd=234),
         fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.32, ubound=0.57),
         fire_combustion_efficiency=1,

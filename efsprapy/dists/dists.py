@@ -4,12 +4,13 @@ from typing import Union
 
 import numpy as np
 
-from sfeprapy.func.erf import erf, erfinv
 
 __all__ = (
     'Normal', 'Gumbel', 'Lognormal', 'Arcsine', 'Cauchy', 'HyperbolicSecant', 'HalfCauchy', 'Logistic',
-    'Uniform', 'DistFunc', 'Constant', 'LognormalMod', 'Discrete'
+    'Uniform', 'DistFunc', 'Constant', 'LognormalMod', 'Discrete', 'Br187FuelLoadDensity', 'Br187HrrDensity'
 )
+
+from efsprapy.dists.erf import erf, erfinv
 
 
 class DistFunc(ABC):
@@ -49,7 +50,7 @@ class DistFunc(ABC):
         return self._ppf(p, *args)
 
     def sampling(self, n: int, lim_1: float = None, lim_2: float = None, shuffle: bool = True):
-        padding = 1. / n
+        padding = .1 / n
 
         if lim_1 is None:
             lim_1 = padding
@@ -134,7 +135,7 @@ class Constant(DistFunc):
 
 
 class Discrete(DistFunc):
-    def __init__(self, values, weights):
+    def __init__(self, values, weights, *_, **__):
         if isinstance(values, str):
             assert ',' in values, f'`discrete_ distribution `values` parameter is not a list separated by comma.'
             values = [float(i.strip()) for i in values.split(',')]
@@ -368,7 +369,7 @@ class Br187FuelLoadDensity(DistFunc):
     def sampling(self, n: int, lim_1: float = None, lim_2: float = None, shuffle: bool = True):
         samples_1 = Gumbel(mean=780, sd=234).sampling(n, lim_1=lim_1, lim_2=lim_2, shuffle=shuffle)
         samples_2 = Gumbel(mean=420, sd=420).sampling(n, lim_1=lim_1, lim_2=lim_2, shuffle=shuffle)
-        samples = np.random.choice(np.append((samples_1, samples_2)), n, replace=False)
+        samples = np.random.choice(np.append(samples_1, samples_2), n, replace=False)
         return samples
 
 
@@ -392,7 +393,7 @@ class Br187HrrDensity(DistFunc):
         a, b = 0.15, 0.65
         mean, sd = (a + b) / 2, (b - a) / (2 * np.sqrt(3))
         samples_2 = Uniform(mean=mean, sd=sd).sampling(n, lim_1=lim_1, lim_2=lim_2, shuffle=shuffle)
-        samples = np.random.choice(np.append((samples_1, samples_2)), n, replace=False)
+        samples = np.random.choice(np.append(samples_1, samples_2), n, replace=False)
         return samples
 
 
