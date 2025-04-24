@@ -59,9 +59,22 @@ def dict_to_xlsx(data: Dict[str, dict], fp: str):
         ws.cell(row=row + 2, column=1, value=row_name)
 
     # Write the data to the worksheet
-    for col, (column_name, data_) in enumerate(data.items(), start=1):
-        for row, (row_name, value) in enumerate(data_.items(), start=2):
-            ws.cell(row=row, column=col + 1, value=value)
+    # Iterate through columns
+    for col_index, (column_name, data_) in enumerate(data.items()):
+        # The actual column number in Excel (starts from B=2)
+        excel_col = col_index + 2  # +1 for 0-based enumerate, +1 for skipping column A
+
+        # Iterate through the *standardized* row headers
+        for row_index, row_name in enumerate(row_headers):
+            # The actual row number in Excel (starts from row 2)
+            excel_row = row_index + 2  # +1 for 0-based enumerate, +1 for skipping row 1
+
+            # Look up the value using the row_name from the standardized list
+            # This ensures the correct value is placed in the correct row
+            value = data_.get(row_name, "")
+            # Use .get() for safety in case of missing keys (though assert should prevent this)
+
+            ws.cell(row=excel_row, column=excel_col, value=value)
 
     # Save the workbook to an XLSX file
     wb.save(fp)

@@ -241,7 +241,7 @@ def calculate_incident_heat_flux_from_parametric_fire(
         H_o: float,
         P_o: float,
         S: float,
-):
+) -> (np.ndarray, np.ndarray):
     # calculate the view factors
     T = para_fire(
         t=t_arr,
@@ -267,7 +267,7 @@ def calculate_ignition_time_ftp(
         ftp_chf: float,
         ftp_index: float,
         ftp_target: float,
-):
+) -> (np.ndarray, np.ndarray):
     ftp = np.zeros_like(t)
     ftp_i_diff = (q_inc[:-1] + q_inc[1:]) * 0.5
     ftp_i_diff[ftp_i_diff < ftp_chf] = ftp_chf
@@ -281,6 +281,20 @@ def calculate_ignition_time_ftp(
     except ValueError:
         t_ig = np.nan
     return t_ig, ftp
+
+
+def calculate_ignition_time_ftp_test():
+    t = np.arange(601)
+    q_inc = np.full_like(t, 5.67e-8)
+
+    calculate_ignition_time_ftp(
+        t=t,
+        q_inc=q_inc,
+        ftp_chf=13.4e3,
+        ftp_index=2.0,
+        ftp_target=34592,
+    )
+
 
 
 def calculate_ignition_time_from_temperature(
@@ -355,11 +369,13 @@ def main(
         fire_hrr_density_kWm2: float,
         fire_growth_factor: float,
         fire_t_lim: float,
+        fire_convection_factor: float,
 
         detector_to_fire_vertical_distance: float,
         detector_to_fire_horizontal_distance: float,
         detector_act_temp: float,
         detector_response_time_index: float,
+        detector_conduction_factor: float,
 
         receiver_separation: float,
 
@@ -470,7 +486,4 @@ def main(
         t_ig_safir, t_max_safir, T_max_safir = np.nan, np.nan, np.nan
 
     # reduce vector to scalar for outputs
-    return tuple(np.average(i) if isinstance(i, np.ndarray) else i for i in (
-        q_inc, t_ig_ftp, ftp[-1], t_ig_safir, t_max_safir, T_max_safir, fire_mode, t_d, fire_fuel_density,
-        fire_hrr_density_kWm2
-    ))
+    return float(np.average(q_inc)), t_ig_ftp, float(ftp[-1]), t_ig_safir, t_max_safir, T_max_safir, t_d,

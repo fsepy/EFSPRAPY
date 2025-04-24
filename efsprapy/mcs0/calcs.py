@@ -87,7 +87,6 @@ def calculate_incident_heat_flux_from_controlled_fire(
         detector_conduction_factor=C,
         fire_hrr_density_kWm2=hrr_density_kWm2,
         fire_conv_frac=C_conv,
-        activation_temperature=T_act,
     )
     if not (np.nanmin(T_d) < T_act < np.nanmax(T_d)):
         # no detection, no treatment to HRR and smoke temperature

@@ -1,8 +1,12 @@
+import json
+import pathlib
 from io import StringIO
+from os import path
 from typing import Union, Any, Type
 
 import numpy as np
 
+from .csv import dict_of_ndarray_to_csv
 from .xlsx import dict_to_xlsx
 from .. import dists
 
@@ -59,8 +63,50 @@ class InputParser:
         dict_out["index"] = np.arange(0, n, 1)
         return dict_out
 
+    def to_dict_2(self):
+        n = self.__n
+        dist_params = self.__in
+        dict_out_stochastic = dict(index=np.arange(n))
+        dict_out_static = dict()
+
+        for k, v in dist_params.items():
+            if isinstance(v, float) or isinstance(v, int) or isinstance(v, float):
+                dict_out_static[k] = v
+            elif isinstance(v, str):
+                dict_out_static[k] = v
+            elif isinstance(v, np.ndarray) or isinstance(v, list):
+                dict_out_static[k] = v
+            elif isinstance(v, dict):
+                if "dist" in v:
+                    try:
+                        dict_out_stochastic[k] = InputParser._sampling(v, n)
+                    except KeyError:
+                        raise KeyError(f"Missing parameters in input variable {k}.")
+                else:
+                    raise ValueError(f"Unknown input data type for {k}. {v}.")
+            elif v is None:
+                dict_out_static[k] = np.nan
+            else:
+                raise TypeError(f"Unknown input data type for {k}.")
+
+        return dict_out_stochastic, dict_out_static
+
     def to_xlsx(self, fp: str):
         dict_to_xlsx({i: InputParser.flatten_dict(v) for i, v in self.to_dict().items()}, fp)
+
+    def to_cases_csv_and_json(self, fp_case: str):
+        name = path.basename(fp_case)
+
+        pathlib.Path(fp_case).mkdir(parents=True, exist_ok=True)
+
+        dict_out_stochastic, dict_out_static = self.to_dict_2()
+
+        fp_stochastic = path.join(fp_case, f'{name}.csv')
+        dict_of_ndarray_to_csv(fp_stochastic, dict_out_stochastic)
+
+        fp_static = path.join(fp_case, f'{name}.json')
+        with open(fp_static, 'w', encoding='utf-8') as f:
+            json.dump(dict_out_static, f, ensure_ascii=False, indent=4)
 
     @staticmethod
     def unflatten_dict(dict_in: dict) -> dict:
@@ -144,7 +190,9 @@ class InputParser:
             dist_name = 'Lognormal'
         elif dist_name == 'Constant':
             if 'ubound' in dist_params and 'lbound' in dist_params:
-                dist_params['value'] = (dist_params.pop('lbound') + dist_params.pop('ubound')) / 2.
+                ubound = dist_params.pop('ubound')
+                lbound = dist_params.pop('lbound')
+                dist_params['value'] = (lbound + ubound) / 2.
 
         dist_cls: Type[dists.DistFunc] = getattr(dists, dist_name)
         dist_obj: dists.DistFunc = dist_cls(**dist_params)
