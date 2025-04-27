@@ -4,7 +4,6 @@ from typing import Union
 
 import numpy as np
 
-
 __all__ = (
     'Normal', 'Gumbel', 'Lognormal', 'Arcsine', 'Cauchy', 'HyperbolicSecant', 'HalfCauchy', 'Logistic',
     'Uniform', 'DistFunc', 'Constant', 'LognormalMod', 'Discrete', 'Br187FuelLoadDensity', 'Br187HrrDensity'
@@ -367,8 +366,8 @@ class Br187FuelLoadDensity(DistFunc):
         pass
 
     def sampling(self, n: int, lim_1: float = None, lim_2: float = None, shuffle: bool = True):
-        samples_1 = Gumbel(mean=780, sd=234).sampling(n, lim_1=lim_1, lim_2=lim_2, shuffle=shuffle)
-        samples_2 = Gumbel(mean=420, sd=420).sampling(n, lim_1=lim_1, lim_2=lim_2, shuffle=shuffle)
+        samples_1 = Gumbel(mean=780, sd=234).sampling(n, lim_1=10, lim_2=3000, shuffle=shuffle)
+        samples_2 = Gumbel(mean=420, sd=126).sampling(n, lim_1=10, lim_2=2000, shuffle=shuffle)
         samples = np.random.choice(np.append(samples_1, samples_2), n, replace=False)
         return samples
 
