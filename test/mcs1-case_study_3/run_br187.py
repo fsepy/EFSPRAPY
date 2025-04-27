@@ -14,8 +14,6 @@ if __name__ == '__main__':
     prepare_inputs_with_var_w_and_h(
         n_simulations=10_000,
         kwargs=EXAMPLE_INPUT['CASE_1'] | dict(
-            # ftp_chf=13.3e3, ftp_index=1.7, ftp_target=9094,
-
             fire_combustion_efficiency=1, receiver_ignition_temperature=-1, safir_input_file_s=None,
 
             fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=10, ubound=3000, mean=780, sd=234),
@@ -24,7 +22,8 @@ if __name__ == '__main__':
             # fire_hrr_density_kWm2=dict(dist='br187_hrr_density_', ),
             fire_mode=0,
         ),
-        receiver_separations=np.linspace(2, 10, 100).tolist(),
+        ws=np.linspace(2, 21, 100).tolist(),
+        hs=np.linspace(2, 9, 40).tolist(),
         fp_xlsx=path_work / f'{name}.xlsx',
     )
 

@@ -35,13 +35,11 @@ def prepare_inputs_with_var_sep_dist(
 def prepare_inputs_with_var_w_and_h(
         n_simulations: int, kwargs: dict, ws: list, hs: list, fp_xlsx: pathlib.Path
 ):
-    case_name = fp_xlsx.stem
-    assert '-' not in case_name, f'name cannot contain -'
     kwargs_ = dict()
 
     for w in ws:
         for h in hs:
-            kwargs_[f'{case_name}-{w:06.3f}-{h:06.3f}'] = kwargs | dict(
+            kwargs_[f'{fp_xlsx.stem}-{w:06.3f}-{h:06.3f}'] = kwargs | dict(
                 receiver_separation=sep_parallel_any_br187(w, h, 84, 12.6),
                 room_width=w,
                 room_height=h,
@@ -53,11 +51,7 @@ def prepare_inputs_with_var_w_and_h(
     dict_to_xlsx(kwargs_input, fp_xlsx.as_posix())
 
     input_data = xlsx_to_dict(fp_xlsx.as_posix())
-    dir_cases = fp_xlsx.parents[0] / case_name
-    try:
-        shutil.rmtree(dir_cases)
-    except FileNotFoundError:
-        pass
+    dir_cases = fp_xlsx.parents[0]
     for case_name in input_data.keys():
         if 'n_simulations' in input_data[case_name].keys():
             input_data[case_name].pop('n_simulations')

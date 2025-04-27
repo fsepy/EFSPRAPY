@@ -14,11 +14,9 @@ if __name__ == '__main__':
     prepare_inputs_with_var_sep_dist(
         n_simulations=10_000,
         kwargs=EXAMPLE_INPUT['CASE_1'] | dict(
-            ftp_chf=13.3e3, ftp_index=1.7, ftp_target=9094,
-
             fire_combustion_efficiency=1, receiver_ignition_temperature=-1, safir_input_file_s=None,
 
-            fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=123.24, ubound=1494.3, mean=420, sd=126),
+            fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=10, ubound=3000, mean=780, sd=234),
             fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.15, ubound=0.65),
             fire_mode=dict(dist='constant_', lbound=0, ubound=0, values=None, weights=None),
         ),
