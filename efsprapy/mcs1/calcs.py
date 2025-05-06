@@ -154,7 +154,6 @@ def calculate_ignition_time_ftp_test():
     )
 
 
-
 def calculate_ignition_time_from_temperature(
         t_arr: np.ndarray, q_inc: np.ndarray, T_ig: float, safir_in_s: str, t_step: float = 5., dir_temp: str = None
 ):
@@ -192,7 +191,10 @@ def calculate_ignition_time_from_temperature(
         try:
             with open(os.path.join(dir_work, f'{fn}.XML')) as f_xml:
                 pp = PPXML(xml=f_xml.read())
-            T_1 = np.interp(t_arr, pp.t, pp.get_nodes_temp(np.array([1]))[0, :] + 273.15)
+
+            nodes_index = pp.get_nodes_from_xy(((0, 0,),))
+            temperature_array = pp.get_nodes_temp(nodes_index)[0, :] + 273.15
+            T_1 = np.interp(t_arr, pp.t, temperature_array)
         except ValueError:
             T_1 = None
 
@@ -334,12 +336,13 @@ def main(
 
     # surface temperature
     try:
-        if receiver_ignition_temperature <= 0:
-            raise ValueError
-        t_ig_safir, t_max_safir, T_max_safir = calculate_ignition_time_from_temperature(
-            t_arr=t_arr, q_inc=q_inc, T_ig=receiver_ignition_temperature, safir_in_s=safir_input_file_s,
-            dir_temp=dir_temp
-        )
+        if receiver_ignition_temperature > 0:
+            t_ig_safir, t_max_safir, T_max_safir = calculate_ignition_time_from_temperature(
+                t_arr=t_arr, q_inc=q_inc, T_ig=receiver_ignition_temperature, safir_in_s=safir_input_file_s,
+                dir_temp=dir_temp
+            )
+        else:
+            t_ig_safir, t_max_safir, T_max_safir = np.nan, np.nan, np.nan
     except Exception:
         t_ig_safir, t_max_safir, T_max_safir = np.nan, np.nan, np.nan
 

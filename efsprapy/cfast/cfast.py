@@ -373,7 +373,6 @@ def calculate_hrr_and_smoke_with_sprinkler_suppression_cfast(
                 sprinkler_rti=RTI,
             ))
         _ = Run().run(fp_cfast_in)
-
         t_, ult_, llt_, lh_, hrr_, spt_ = _.read_outputs()
 
     ult_ = np.interp(t_arr, t_, ult_) + 273.15

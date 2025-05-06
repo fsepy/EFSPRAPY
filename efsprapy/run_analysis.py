@@ -237,7 +237,7 @@ def process_multiple_cases(case_dirs: List[pathlib.Path], n_proc: Optional[int] 
         case_dirs: List of directories containing simulation cases
     """
     # Determine number of processes (leave one core free for the OS)
-    num_cores = n_proc or max(1, mp.cpu_count() - 12)
+    num_cores = n_proc or max(1, mp.cpu_count() - 2)
     logger.info(f"Using {num_cores} worker processes")
 
     # Create a single ProcessPoolExecutor for all cases
@@ -304,6 +304,11 @@ def process_multiple_cases_2(case_dirs: List[pathlib.Path], n_proc: Optional[int
 
     if not valid_case_dirs:
         logger.warning("No valid case directories found!")
+        return
+
+    if n_proc == 1:
+        for case_dir in tqdm(valid_case_dirs):
+            process_single_case_2(case_dir)
         return
 
     # Use ProcessPoolExecutor to run each case as a separate process

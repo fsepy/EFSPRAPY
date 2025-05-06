@@ -1,14 +1,17 @@
 import logging
+import pathlib
 import re
 import shutil
 import subprocess
-import time
-from os import path, environ, getcwd, devnull
+from os import devnull, path, sep, getcwd, environ, name as platform_name
 from subprocess import Popen, PIPE
-from time import time
-from typing import List, Dict, Callable, Union, Optional
+from time import sleep, time
+from typing import Callable, List, Dict, Union, Optional
 
 import numpy as np
+from fsetools.libstd.bs_en_1993_1_2_2005_clause_3 import (
+    clause_3_2_1_3_k_y_theta_mod, clause_3_2_1_3_k_y_theta_mod_reversed
+)
 
 from .re_patterns import stdout_last_time
 
@@ -18,8 +21,6 @@ except ImportError:
     CREATE_NO_WINDOW = 0
 
 logger = logging.getLogger('gui')
-
-__all__ = 'PPXML', 'Run', 'safir_single_run', 'batch_run'
 
 
 class PPXML:
@@ -310,21 +311,21 @@ class PPXML:
 
     @staticmethod
     def __T_ave_k_y_theta(Ts: np.ndarray, weights: np.ndarray) -> np.ndarray:
-        from fsetools.libstd.bs_en_1993_1_2_2005_k_y_theta import (
-            clause_3_2_1_1_k_y_theta_mod, clause_3_2_1_1_k_y_theta_mod_reversed
-        )
+        clause_3_2_1_1_k_y_theta_mod
+        clause_3_2_1_1_k_y_theta_mod_reversed
 
         T_ave = np.zeros_like(Ts[0, :])
         for i in range(len(T_ave)):
-            k_y_theta_i = clause_3_2_1_1_k_y_theta_mod(Ts[:, i] + 273.15)
+            k_y_theta_i = clause_3_2_1_3_k_y_theta_mod(Ts[:, i] + 273.15)
             k_y_theta_mean = np.sum(np.multiply(k_y_theta_i, weights)) / np.sum(weights)
-            T_ave_ = clause_3_2_1_1_k_y_theta_mod_reversed(k_y_theta_mean) - 273.15
+            T_ave_ = clause_3_2_1_3_k_y_theta_mod_reversed(k_y_theta_mean) - 273.15
             T_ave[i] = T_ave_
 
         return T_ave
 
 
 class Run:
+
     def __init__(self):
         self.__fp_in = None
         self.__fp_safir_exe = self.detect_binary()
@@ -336,7 +337,7 @@ class Run:
             fp_in=self.__fp_in,
             fp_stdout=f'{path.splitext(self.__fp_in)[0]}.stdout',
             print_time=print_time,
-            timeout=timeout
+            timeout=timeout,
         )
 
     def set_fp_in(self, fp_in: str):
@@ -347,8 +348,7 @@ class Run:
             raise FileNotFoundError(f'File does not exist {fp_in}')
 
     @staticmethod
-    def detect_binary(fp=None):
-        from os import name as platform_name
+    def detect_binary(given_fp=None):
         if platform_name == 'nt':
             executable = "safir.exe"
         else:
@@ -358,68 +358,65 @@ class Run:
         env_path = shutil.which(executable)
 
         possible_paths = [
-            fp,
+            given_fp,
             path.join(getcwd(), executable),
-            path.join("C:\work\\fem\\safir", executable),
-            path.join(env_home, executable) if env_home is not None else None,
-            path.join(env_path) if env_path is not None else None
+            path.join('c:', sep, 'work', 'fem', executable),
+            path.join('c:', sep, 'work', 'fem', 'safir', executable),
+            path.join('c:', sep, 'Program Files', 'Safir', executable),
+            env_home and path.join(env_home, executable),
+            env_path
         ]
 
-        for fp_ in possible_paths:
-            if fp_ is not None and path.isfile(fp_):
-                return fp_
+        for fp in filter(None, possible_paths):
+            if path.isfile(fp):
+                return fp
 
         raise FileNotFoundError(f"Unable to find {executable}")
 
     @staticmethod
     def __run_worker(exe, fp_in, timeout: int = 1800, fp_stdout: str = None, print_time: Callable = None):
-        """"""
-        fn_in = path.basename(fp_in)
-        if fn_in.endswith('.in'):
-            fn_in = fn_in[:-3]
+        fn_in = pathlib.Path(fp_in).stem
 
         proc = Popen(
-            args=f'{exe} {fn_in}',
+            args=[exe, fn_in],
             stdout=PIPE,
             stdin=PIPE,
             stderr=PIPE,
-            creationflags=CREATE_NO_WINDOW,
+            creationflags=(CREATE_NO_WINDOW if platform_name == 'nt' else 0),
             cwd=path.dirname(fp_in),
             universal_newlines=True,
             encoding='utf-8',
         )
 
         lines = list()
-        time_0 = time()
-        while time() - time_0 < timeout:
-            line = proc.stdout.readline()
-            if line == '' and proc.poll() is not None:
-                break
-            if line:
-                if fp_stdout is not None:
-                    lines.append(line.strip())
+        try:
+            time_0 = time()
+            while True:
+                if time() - time_0 >= timeout:
+                    raise subprocess.TimeoutExpired(proc.args, timeout)
+
+                line = proc.stdout.readline()
+                if not line and proc.poll() is not None:
+                    break
+
+                lines.append(line.strip())
                 try:
-                    print_time(float(re.findall(stdout_last_time, line.strip())[-1])) if print_time else None
-                except Exception:
+                    last_time = float(re.findall(stdout_last_time, line)[-1])
+                    if print_time:
+                        print_time(last_time)
+                except (IndexError, ValueError):
                     pass
 
-        try:
-            proc.communicate(timeout=0.1)
-        except subprocess.TimeoutExpired as e:
+        except subprocess.TimeoutExpired:
             if print_time:
                 print_time(0)
             lines.append(f'Process timed out after {timeout:g} seconds.')
             proc.kill()
             proc.communicate()
-            raise e
         finally:
-            if fp_stdout is not None:
-                try:
-                    with open(fp_stdout, 'w+') as f:
-                        f.write('\n'.join(lines))
-                except Exception as e2:
-                    logger.warning(f'Unable to write to {fp_stdout}. {type(e2).__name__}.')
-        return '\n'.join(lines)
+            if fp_stdout:
+                with open(fp_stdout, 'w+') as f:
+                    f.write('\n'.join(lines))
 
 
 class Therm2D(Run, PPXML):
@@ -492,7 +489,7 @@ def batch_run(
         else:
             if qt_progress_signal:
                 qt_progress_signal.emit(int(q.qsize() / n_simulations * 100))
-            time.sleep(1)  # in progress
+            sleep(1)  # in progress
 
     # --------------------------------------------
     # pull results and close multiprocess pipeline
@@ -500,7 +497,7 @@ def batch_run(
     p.close()
     p.join()
     mp_out = jobs.get()
-    time.sleep(0.5)
+    sleep(0.5)
 
     # ----------------------
     # save and print summary
@@ -509,7 +506,6 @@ def batch_run(
         out = mp_out
         len_1 = int(max([len(' '.join(i[0])) for i in out]))
         summary = '\n'.join([f'{" ".join(i[0]):<{len_1}} - {i[1]:<{len_1}}' for i in out])
-        print(summary)
         with open(path.join(dir_work, 'summary.txt'), 'w+') as f:
             f.write(summary)
 
