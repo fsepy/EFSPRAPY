@@ -10,7 +10,7 @@ from efsprapy.prepare_inputs import convert_input_file_xlsx_to_cases
 from efsprapy.run_analysis import process_multiple_cases
 
 if __name__ == '__main__':
-    chdir()
+    chdir(r'C:\Users\IanFu\Desktop\~1_CURRENT\efsprapy\01-analysis\sensitivity_sprinkler_type')
     name = 'sprinkler_type'
 
     path_work = pathlib.Path(getcwd()) / name
