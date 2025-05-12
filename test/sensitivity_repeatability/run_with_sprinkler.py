@@ -16,13 +16,13 @@ if __name__ == '__main__':
     fp_xlsx = path_work / f'{name}.xlsx'
 
     input_data_dict = dict()
-    for n_sim in (100, 200, 500, 1000, 2000, 5000, 10000):
+    for n_sim in (100, 200, 500, 1000, 2000, 5000,):
         for i in range(100):
-            input_data_dict[f'n{n_sim}_{i}'] = EXAMPLE_INPUT['CASE_1'] | dict(
+            input_data_dict[f'n{n_sim}_{i}'] = EXAMPLE_INPUT | dict(
                 n_simulations=n_sim,
                 fire_combustion_efficiency=1, receiver_ignition_temperature=-1, safir_input_file_s=None,
                 fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=10, ubound=3000, mean=780, sd=234),
-                fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.15, ubound=0.65),
+                fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.15e3, ubound=0.65e3),
                 fire_mode=dict(dist='discrete_', values='0,1,2', weights='0.07,0.59,0.34', lbound=None, ubound=None),
             )
 

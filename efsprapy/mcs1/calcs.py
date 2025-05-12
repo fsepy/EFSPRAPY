@@ -65,7 +65,7 @@ def calculate_incident_heat_flux_from_sprinkler_suppressed_fire(
     q_f = np.zeros_like(fire_hrr_kW)
     q_f_mask = D_f > 0
     q_f[q_f_mask] = epsilon_f * np.where(S / D_f[q_f_mask] > 2.5, q_f_1[q_f_mask], q_f_2[q_f_mask])
-    q_f *= epsilon_f * 1e3  # Radiation at receiver due to flame [kw/m²] and convert to W/m²
+    q_f = q_f * epsilon_f * 1e3  # Radiation at receiver due to flame [kw/m²] and convert to W/m²
 
     # view factor
     phi_f_mask = np.logical_and(q_f_mask, q_f_2_mask)
@@ -211,6 +211,7 @@ def calculate_ignition_time_from_temperature(
     return t_ig, t_max, T_max
 
 
+
 def main(
         t_end: float,
         t_step: float,
@@ -247,6 +248,7 @@ def main(
         ftp_index: Optional[float] = None,
         ftp_target: Optional[float] = None,
 
+        fire_heat_flux_reduction_factor: float = 1.0,
         receiver_ignition_temperature: Optional[float] = -1,
         safir_input_file_s: Optional[str] = None,
 
@@ -320,6 +322,9 @@ def main(
     else:
         logger.debug('{}\n{}\n{}'.format(*sys.exc_info()[:2], traceback.format_exc()))
         return [np.nan] * 9
+
+    # apply heat flux reduction factor
+    q_inc = q_inc * fire_heat_flux_reduction_factor
 
     # ==============================
     # Calculate ignition temperature

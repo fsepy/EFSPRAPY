@@ -1,26 +1,24 @@
-from efsprapy.mcs1.safir_input_files import hf_ft_40mm_ft
-
-EXAMPLE_INPUT_DETERMINISTIC = dict(
+EXAMPLE_INPUT = dict(
     n_simulations=10_000,
     t_end=180. * 60.,
     t_step=10.,
 
-    opening_width=12,
+    opening_width=6,
     opening_height=3,
     opening_ventilation_fraction=dict(dist='lognorm_mod_', lbound=1e-4, ubound=1 - 1e-4, mean=0.2, sd=0.2),
 
-    room_width=12,
+    room_width=6,
     room_height=3,
     room_width_depth_ratio=dict(dist='uniform_', lbound=0.4, ubound=0.6),
 
-    # fire_mode=dict(dist='discrete_', values='0,1,2', weights='0.07,0.59,0.34'),
-    fire_mode=0,
+    fire_mode=dict(dist='discrete_', values='0,1,2', weights='0.07,0.59,0.34', lbound=None, ubound=None),
     fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=228.88, ubound=2775.2, mean=780, sd=234),
-    fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.32, ubound=0.57),
+    fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.32e3, ubound=0.57e3),
     fire_combustion_efficiency=1,
     fire_growth_factor=0.0117,
     fire_t_lim=20. * 60.,
     fire_convection_factor=0.7,
+    fire_heat_flux_reduction_factor=1.0,
 
     detector_to_fire_vertical_distance=3 - 0.02,
     detector_to_fire_horizontal_distance=2.83,
@@ -32,59 +30,10 @@ EXAMPLE_INPUT_DETERMINISTIC = dict(
     lining_c=1000,
     lining_k=1.13,
 
-    receiver_ignition_temperature=273.15 + 368,
-    receiver_separation=7.320449646472931,
+    receiver_ignition_temperature=-1,
+    receiver_separation=5.5625,
 
-    ftp_chf=13.4e3,
-    ftp_index=2.0,
-    ftp_target=34592,
+    ftp_chf=7.7e3, ftp_index=1.7, ftp_target=20423,  # MDF, achieves the highest ignition probability
 
-    safir_input_file_s=hf_ft_40mm_ft,
+    safir_input_file_s=None,
 )
-
-EXAMPLE_INPUT = dict(
-    CASE_1=dict(
-        n_simulations=10_000,
-        t_end=180. * 60.,
-        t_step=10.,
-
-        opening_width=12,
-        opening_height=3,
-        opening_ventilation_fraction=dict(dist='lognorm_mod_', lbound=1e-4, ubound=1 - 1e-4, mean=0.2, sd=0.2),
-
-        room_width=12,
-        room_height=3,
-        room_width_depth_ratio=dict(dist='uniform_', lbound=0.4, ubound=0.6),
-
-        fire_mode=dict(dist='discrete_', values='0,1,2', weights='0.07,0.59,0.34', lbound=None, ubound=None),
-        # fire_mode=0,
-        fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=228.88, ubound=2775.2, mean=780, sd=234),
-        fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.32, ubound=0.57),
-        fire_combustion_efficiency=1,
-        fire_growth_factor=0.0117,
-        fire_t_lim=20. * 60.,
-        fire_convection_factor=0.7,
-
-        detector_to_fire_vertical_distance=3 - 0.02,
-        detector_to_fire_horizontal_distance=2.83,
-        detector_act_temp=93 + 273.15,
-        detector_response_time_index=250,
-        detector_conduction_factor=0.65,
-
-        lining_rho=2000,
-        lining_c=1000,
-        lining_k=1.13,
-
-        receiver_ignition_temperature=-1,
-        receiver_separation=7.320449646472931,
-
-        ftp_chf=13.4e3,
-        ftp_index=2.0,
-        ftp_target=34592,
-
-        safir_input_file_s=None,
-    )
-)
-
-if __name__ == "__main__":
-    print(EXAMPLE_INPUT_DETERMINISTIC, "\n")

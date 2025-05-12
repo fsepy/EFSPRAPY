@@ -9,39 +9,16 @@ from efsprapy.run_analysis import process_multiple_cases
 
 if __name__ == '__main__':
     dir_project = pathlib.Path(r'C:\Users\IanFu\Desktop\~1_CURRENT\efsprapy\01-analysis\sensitivity_sprinkler_type')
-    case_name = 'sprinkler_type'
+    case_name = 'rti'
 
     dir_case = dir_project / case_name
     shutil.rmtree(dir_case, ignore_errors=True)
     dir_case.mkdir(parents=True, exist_ok=True)
     fp_xlsx = dir_case / f'{case_name}.xlsx'
 
-    sprinkler_data = dict(
-        residential=dict(
-            detector_act_temp=68 + 273.15,
-            detector_response_time_index=50,
-            detector_conduction_factor=0.02,
-        ),
-        office=dict(
-            detector_act_temp=93 + 273.15,
-            detector_response_time_index=150,
-            detector_conduction_factor=0.04,
-        ),
-        retail=dict(
-            detector_act_temp=141 + 273.15,
-            detector_response_time_index=200,
-            detector_conduction_factor=0.05,
-        ),
-        reference=dict(
-            detector_act_temp=141 + 273.15,
-            detector_response_time_index=250,
-            detector_conduction_factor=0.65,
-        )
-    )
-
     input_data_dict = dict()
-    for k, v in sprinkler_data.items():
-        input_data_dict[f'{k}'] = EXAMPLE_INPUT | dict(
+    for rti in (30, 50, 80, 100, 150, 200, 250, 300, 350):
+        input_data_dict[f'{rti:05d}'] = EXAMPLE_INPUT | dict(
             n_simulations=100,
 
             opening_width=10,
@@ -57,8 +34,8 @@ if __name__ == '__main__':
             fire_mode=dict(dist='discrete_', values='0,1,2', weights='0.07,0.59,0.34', lbound=None, ubound=None),
             receiver_separation=.4,
 
-            detector_act_temp=141 + 273.15,
-            detector_response_time_index=250,
+            detector_act_temp=68 + 273.15,
+            detector_response_time_index=rti,
             detector_conduction_factor=0.65,
         )
 

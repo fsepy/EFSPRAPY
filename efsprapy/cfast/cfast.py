@@ -301,7 +301,7 @@ def calculate_hrr_and_smoke_with_sprinkler_suppression_cfast(
     #   fire_travel_speed = (alpha * 1e3 / hrr_density / pi) ** 0.5
     #
     # Here, alpha is the fire growth coefficient of the t-square fire model.
-    t_arr_ = np.arange(0, t_arr[-1] + 1, 30., dtype=float)
+    t_arr_ = np.arange(0, t_arr[-1] + 1, 60., dtype=float)
     fire_travel_speed = (alpha_kWs2 / hrr_density_kWm2 / np.pi) ** 0.5
     fire_area_1 = np.where((_ := np.pi * (fire_travel_speed * t_arr_) ** 2) > A_f, A_f, _)
     fire_area_2 = np.pi * (
@@ -318,7 +318,7 @@ def calculate_hrr_and_smoke_with_sprinkler_suppression_cfast(
     # &TABL ID = 'Constant Fire', DATA = 10,   100, 0, 0.01, 0, 0, 0, 0, 0 /
     # &TABL ID = 'Constant Fire', DATA = 990,  100, 0, 0.01, 0, 0, 0, 0, 0 /
     # &TABL ID = 'Constant Fire', DATA = 1000, 0,   0, 0.01, 0, 0, 0, 0, 0 /
-    fire_hrr_curve_tabl += "&TABL ID = 'Constant Fire', DATA = 0, 0, 0, 0, 0, 0.07, 0, 0, 0 /"
+    fire_hrr_curve_tabl += "&TABL ID = 'Constant Fire', DATA = 0, 0, 0, 0, 0, 0.07, 0, 0, 0 /\n"
     fire_hrr_curve_tabl += '\n'.join(filter(
         None,
         [

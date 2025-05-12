@@ -37,7 +37,7 @@ def calculation_function(params: Dict[str, Any]) -> Tuple:
         raise
 
 
-def process_row(task_data: Dict[str, Any]) -> Tuple:
+def process_iteration(task_data: Dict[str, Any]) -> Tuple:
     """
     Process a single row of data with shared parameters.
 
@@ -208,7 +208,7 @@ def process_single_case(case_dir: pathlib.Path, executor: concurrent.futures.Pro
         batch = process_args[i:i + batch_size]
 
         # Submit all tasks in batch and get futures
-        futures = [executor.submit(process_row, arg | dict(dir_temp=case_dir)) for arg in batch]
+        futures = [executor.submit(process_iteration, arg | dict(dir_temp=case_dir)) for arg in batch]
 
         # Process results as they complete with tqdm
         for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures),
@@ -272,7 +272,7 @@ def process_single_case_2(case_dir: pathlib.Path) -> None:
         for arg in process_args:
             # Add the directory path to the arguments
             arg_with_dir = arg | dict(dir_temp=case_dir)
-            result = process_row(arg_with_dir)
+            result = process_iteration(arg_with_dir)
             results.append(result)
 
         # Define result column names - replace with appropriate names
@@ -317,10 +317,22 @@ def process_multiple_cases_2(case_dirs: List[pathlib.Path], n_proc: Optional[int
         futures = {executor.submit(process_single_case_2, case_dir): case_dir.name for case_dir in valid_case_dirs}
 
         # Process results as they complete
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Processing cases"):
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
             case_name = futures[future]
             try:
                 # Get the result (None for the processing function)
                 future.result()
             except Exception as e:
                 logger.error(f"Error processing case {case_name}: {str(e)}")
+
+
+def process_output_ignition_probability(dir_folder: pathlib.Path) -> (list, list):
+    fp_output = dir_folder / f'{dir_folder.name}_out.csv'
+    mcs_output = np.genfromtxt(fp_output, delimiter=",", skip_header=1)
+    N = np.shape(mcs_output)[0]
+
+    # find all iterations that ignition occurred
+    t_ig_ftp = mcs_output[:, 2]
+    P_ig = sum(np.logical_and(t_ig_ftp > 0, t_ig_ftp < np.inf)) / N
+
+    return P_ig

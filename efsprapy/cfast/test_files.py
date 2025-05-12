@@ -11,12 +11,12 @@ simple = """&HEAD VERSION = 7700, TITLE = 'CFAST Simulation' /
  
 !! Compartments 
 &COMP ID = 'ROOM'
-      DEPTH = {room_depth} HEIGHT = {room_height} WIDTH = {room_width}
+      DEPTH = {room_depth:.3f} HEIGHT = {room_height:.3f} WIDTH = {room_width:.3f}
       CEILING_MATL_ID = 'CONCRETE' CEILING_THICKNESS = 0.15 WALL_MATL_ID = 'CONCRETE' WALL_THICKNESS = 0.15
       ORIGIN = 0, 0, 0 GRID = 50, 50, 50 /
  
 !! Wall Vents
-&VENT TYPE = 'WALL' ID = 'OPENING' COMP_IDS = 'ROOM' 'OUTSIDE' , BOTTOM = 0 HEIGHT = {opening_height}, WIDTH = {opening_width}
+&VENT TYPE = 'WALL' ID = 'OPENING' COMP_IDS = 'ROOM' 'OUTSIDE' , BOTTOM = 0 HEIGHT = {opening_height:.3f}, WIDTH = {opening_width:.3f}
       FACE = 'FRONT'  OFFSET = 1 /
  
 !! Fires 
@@ -25,7 +25,7 @@ simple = """&HEAD VERSION = 7700, TITLE = 'CFAST Simulation' /
 {fire_hrr_curve_tabl}
  
 !! Devices
-&DEVC ID = 'Sprinkler_1' COMP_ID = 'ROOM' LOCATION = {sprinkler_loc_x}, {sprinkler_loc_y}, {sprinkler_loc_z} TYPE = 'SPRINKLER' SETPOINT = {sprinkler_activation_temperature}, RTI = {sprinkler_rti} SPRAY_DENSITY = 7E-05 /
+&DEVC ID = 'Sprinkler_1' COMP_ID = 'ROOM' LOCATION = {sprinkler_loc_x:.3f}, {sprinkler_loc_y:.3f}, {sprinkler_loc_z:.3f} TYPE = 'SPRINKLER' SETPOINT = {sprinkler_activation_temperature:.3f}, RTI = {sprinkler_rti:.3f} SPRAY_DENSITY = 7E-05 /
  
 &TAIL /
 """
