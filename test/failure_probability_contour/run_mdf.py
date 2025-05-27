@@ -11,7 +11,7 @@ from efsprapy.run_analysis import process_multiple_cases_2
 
 if __name__ == '__main__':
     dir_project = pathlib.Path(r'C:\Users\IanFu\Desktop\~1_CURRENT\efsprapy\01-analysis\failure_probability_contour')
-    case_name = 'contour_with_2m_limit'
+    case_name = 'mdf'
 
     dir_case = dir_project / case_name
     shutil.rmtree(dir_case, ignore_errors=True)
@@ -19,7 +19,20 @@ if __name__ == '__main__':
     fp_xlsx = dir_case / f'{case_name}.xlsx'
 
     kwargs_ = dict()
-    for w, h in itertools.product((np.arange(0.5, 21.001, 0.5)), np.arange(6, 9.001, 0.5)):
+
+    for w, h in itertools.product((np.arange(0.1, 18, 0.1)), np.arange(0.1, 4, 0.1)):
+        kwargs_[f'{fp_xlsx.stem}-{w:06.3f}-{h:06.3f}'] = EXAMPLE_INPUT | dict(
+            receiver_separation=max(2, sep_parallel_any_br187(w, h, 84, 12.6)),
+            room_width=w, room_height=h, opening_width=w, opening_height=h,
+
+            fire_combustion_efficiency=1, receiver_ignition_temperature=-1, safir_input_file_s=None,
+
+            fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=10, ubound=3000, mean=780, sd=234),
+            fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.15e3, ubound=0.65e3),
+            fire_mode=0,
+        )
+
+    for w, h in itertools.product((np.arange(0.5, 21.001, 0.5)), np.arange(0.5, 9.001, 0.5)):
         kwargs_[f'{fp_xlsx.stem}-{w:06.3f}-{h:06.3f}'] = EXAMPLE_INPUT | dict(
             receiver_separation=max(2, sep_parallel_any_br187(w, h, 84, 12.6)),
             room_width=w, room_height=h, opening_width=w, opening_height=h,

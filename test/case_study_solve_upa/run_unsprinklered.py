@@ -19,7 +19,8 @@ if __name__ == '__main__':
     fp_xlsx = dir_case / f'{case_name}.xlsx'
 
     kwargs_ = dict()
-    for unprotected_area_percentage in np.arange(0.01, 1 + 1e-5, 0.01):
+    w, h = 6, 3
+    for unprotected_area_percentage in np.arange(0.01, 1 + 1e-5, 0.05):
         kwargs_[f'{case_name}-{unprotected_area_percentage:06.6f}'] = EXAMPLE_INPUT | dict(
             n_simulations=1e4,
             receiver_separation=2.5,
@@ -30,6 +31,12 @@ if __name__ == '__main__':
             fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=10, ubound=3000, mean=780, sd=234),
             fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.15e3, ubound=0.65e3),
             fire_mode=dict(dist='constant_', lbound=0, ubound=0, values=None, weights=None),
+
+            # opening_width=w,
+            # opening_height=h,
+            # room_width=w,
+            # room_height=h,
+            # receiver_separation=max(2, sep_parallel_any_br187(w, h, 84, 12.6)),
         )
 
     kwargs_input = {k_: InputParser.flatten_dict(v_) for k_, v_ in kwargs_.items()}

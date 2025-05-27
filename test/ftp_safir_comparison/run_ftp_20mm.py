@@ -1,6 +1,7 @@
 import pathlib
 from os import chdir, getcwd
 
+from efsprapy.goal_seek import sep_parallel_any_br187
 from efsprapy.mcs.parser import InputParser
 from efsprapy.mcs.xlsx import dict_to_xlsx, xlsx_to_dict
 from efsprapy.mcs1 import EXAMPLE_INPUT
@@ -8,7 +9,7 @@ from efsprapy.prepare_inputs import convert_input_file_xlsx_to_cases
 from efsprapy.run_analysis import process_multiple_cases_2
 
 if __name__ == '__main__':
-    chdir(r'C:\Users\IanFu\Desktop\~1_CURRENT\efsprapy\01-analysis\ftp_safir_comparison')
+    chdir(r'C:\Users\IanFu\Desktop\~1_CURRENT\efsprapy\01-analysis\ftp_selection')
     name = 'ftp_20mm'
 
     path_work = pathlib.Path(getcwd()) / name
@@ -29,7 +30,12 @@ if __name__ == '__main__':
         input_data_dict[k] = EXAMPLE_INPUT | dict(
             ftp_chf=v['q_cr'] * 1e3, ftp_index=v['n'], ftp_target=v['ftp'],
 
-            receiver_separation=10,
+            opening_width=12,
+            opening_height=3,
+            room_width=12,
+            room_height=3,
+
+            receiver_separation=sep_parallel_any_br187(12, 3, 84, 12.6),
             fire_combustion_efficiency=1, receiver_ignition_temperature=-1, safir_input_file_s=None,
             fire_fuel_density_MJm2=dict(dist="gumbel_r_", lbound=10, ubound=3000, mean=780, sd=234),
             fire_hrr_density_kWm2=dict(dist="uniform_", lbound=0.15e3, ubound=0.65e3),
